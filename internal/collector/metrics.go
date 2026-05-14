@@ -5,8 +5,7 @@ import "github.com/prometheus/client_golang/prometheus"
 const namespace = "shelly_device"
 
 var (
-	// ******* Switch (Power only) **********
-	// https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Switch/#status
+	// ******* Switch **********
 	apower = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "apower"),
 		"Last measured instantaneous active power (in Watts) delivered to the attached load.",
@@ -55,15 +54,16 @@ var (
 		"Total energy cost total.",
 		[]string{
 			"name",
+			"currency",
 		}, nil,
 	)
 
 	// ******** System ***********
-	// https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Sys#status
 	sysMAC = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "sys_mac"),
 		"Mac address of the device.",
 		[]string{
+			"mac",
 			"name",
 		}, nil,
 	)

@@ -8,9 +8,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/icholy/digest"
 	"github.com/veerendra2/shelly-plug-exporter/internal/config"
@@ -23,7 +23,7 @@ type Client struct {
 	pricePerKWh   *float64
 	currency      string
 	maxConcurrent int
-	httpClient    http.Client
+	costEnabled   bool
 }
 
 type DeviceStatus struct {
@@ -58,14 +58,12 @@ func doRequest(ctx context.Context, addr string, username string, password strin
 		return &status, err
 	}
 
-	client := http.DefaultClient
+	client := &http.Client{Timeout: 10 * time.Second}
 	if password != "" {
-		client = &http.Client{
-			Transport: &digest.Transport{
-				Username:  username,
-				Password:  password,
-				Transport: http.DefaultTransport,
-			},
+		client.Transport = &digest.Transport{
+			Username:  username,
+			Password:  password,
+			Transport: http.DefaultTransport,
 		}
 	}
 
@@ -84,26 +82,91 @@ func doRequest(ctx context.Context, addr string, username string, password strin
 		return &status, fmt.Errorf("shelly request failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &status, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	slog.Debug("Raw Shelly API response", "device", requestUrl.Host, "json", string(body))
+
+	if err := json.Unmarshal(body, &status); err != nil {
 		return &status, err
 	}
 
 	return &status, nil
 }
 
-func (c *Client) BulkStatus(ctx context.Context) (*DeviceStatus, error) {
-	for _, device := range c.devices {
-		fmt.Println(device)
-		status, err := doRequest(ctx, device.Address, device.Username, device.Password)
-		if err != nil {
-			slog.Warn("Failed connect device", "error", err)
-			os.Exit(1)
-		}
-		data, _ := json.MarshalIndent(status, "", "  ")
-		fmt.Println(string(data))
+func (c *Client) BulkStatus(ctx context.Context) []DeviceStatus {
+	numDevices := len(c.devices)
+	jobs := make(chan config.Device, numDevices)
+	results := make(chan DeviceStatus, numDevices)
+
+	// Start workers
+	for w := 0; w < c.maxConcurrent; w++ {
+		go func() {
+			for device := range jobs {
+				select {
+				case <-ctx.Done():
+					// Context cancelled, send error to prevent deadlock in the collector loop
+					results <- DeviceStatus{
+						Name:    device.Name,
+						Address: device.Address,
+						Err:     ctx.Err(),
+					}
+					continue
+				default:
+				}
+
+				status, err := doRequest(ctx, device.Address, device.Username, device.Password)
+				if err != nil {
+					results <- DeviceStatus{
+						Name:    device.Name,
+						Address: device.Address,
+						Err:     err,
+					}
+					continue
+				}
+
+				deviceStatus := DeviceStatus{
+					Name:    device.Name,
+					Address: device.Address,
+					Switch:  status.Switch0,
+					System:  status.System,
+				}
+
+				if c.costEnabled && status.Switch0 != nil && status.Switch0.AEnergy != nil {
+					deviceStatus.Cost = &EnergyCost{
+						Value:    (status.Switch0.AEnergy.Total / 1000) * (*c.pricePerKWh),
+						Currency: c.currency,
+					}
+				}
+
+				results <- deviceStatus
+			}
+		}()
 	}
 
-	return &DeviceStatus{}, nil
+	// Feed jobs
+	for _, device := range c.devices {
+		jobs <- device
+	}
+	close(jobs)
+
+	// Collect and filter results
+	var finalStatuses []DeviceStatus
+	for range numDevices {
+		res := <-results
+		if res.Err != nil {
+			slog.Warn("Failed to get status from device",
+				"name", res.Name,
+				"address", res.Address,
+				"error", res.Err)
+			continue
+		}
+		finalStatuses = append(finalStatuses, res)
+	}
+
+	return finalStatuses
 }
 
 func New(cfg config.Config) (Client, error) {
@@ -112,6 +175,6 @@ func New(cfg config.Config) (Client, error) {
 		pricePerKWh:   cfg.PricePerKWh,
 		maxConcurrent: cfg.MaxConcurrentDeviceConnections,
 		currency:      cfg.Currency,
-		httpClient:    http.Client{},
+		costEnabled:   cfg.CostEnabled(),
 	}, nil
 }

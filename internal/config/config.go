@@ -8,14 +8,16 @@ import (
 	"go.yaml.in/yaml/v2"
 )
 
-const defaultMaxConcurrentDeviceConnections = 4
-const defaultUsername = "admin"
+const (
+	defaultMaxConcurrentDeviceConnections = 4
+	defaultUsername                       = "admin"
+)
 
 type Device struct {
 	Name     string `yaml:"name" validate:"required"`
 	Address  string `yaml:"address" validate:"required,url"`
 	Username string `yaml:"username"`
-	Password string `yaml:"password" validate:"required"`
+	Password string `yaml:"password"`
 }
 
 type Config struct {

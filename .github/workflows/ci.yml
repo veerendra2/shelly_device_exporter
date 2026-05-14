@@ -23,7 +23,7 @@ jobs:
         with:
           version: latest
           working-directory: ./
-          args: --timeout 10m
+          args: --timeout 15m
 
   run-tests:
     name: Run Tests
