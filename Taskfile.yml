@@ -3,8 +3,8 @@ version: "3"
 silent: true
 
 vars:
-  MAIN_FILE: /path/to/main.go
-  APP_NAME: your-app-name
+  MAIN_FILE: main.go
+  APP_NAME: shelly-device-exporter
   GOPATH_BIN:
     sh: echo "$(go env GOPATH)/bin"
   BRANCH:

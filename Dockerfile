@@ -1,4 +1,8 @@
-FROM golang:1.26.0 AS BUILDER
+# This Dockerfile is only for development environment
+# Release versions use distroless images built via GoReleaser with ko
+# See .goreleaser.yml
+#
+FROM golang:1.26.2 AS builder
 WORKDIR /app
 RUN curl -sL https://taskfile.dev/install.sh | sh
 COPY go.mod go.sum ./
@@ -9,11 +13,6 @@ RUN /app/bin/task build
 FROM alpine:3.23.3
 RUN apk update && apk add --no-cache ca-certificates
 WORKDIR /
-COPY --from=BUILDER /app/dist/your-app-name .
+COPY --from=builder /app/dist/shelly_device_exporter .
 USER nobody
-ENTRYPOINT ["/your-app-name"]
-
-# FROM gcr.io/distroless/static-debian13
-# WORKDIR /
-# COPY --from=BUILDER /app/dist/your-app-name .
-# ENTRYPOINT ["/your-app-name"]
+ENTRYPOINT ["/shelly_device_exporter"]
