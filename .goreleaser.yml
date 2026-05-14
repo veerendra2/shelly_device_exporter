@@ -6,7 +6,8 @@ before:
     - go mod tidy
 
 builds:
-  - env:
+  - id: binaries
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -19,7 +20,7 @@ builds:
       - "-X github.com/veerendra2/gopackages/version.Version={{.Version}}"
       - "-X github.com/veerendra2/gopackages/version.Revision={{.ShortCommit}}"
       - "-X github.com/veerendra2/gopackages/version.Branch={{.Branch}}"
-      - "-X github.com/veerendra2/gopackages/version.BuildUser={{envOrDefault 'USER' 'ci'}}"
+      - "-X github.com/veerendra2/gopackages/version.BuildUser={{envOrDefault \"USER\" \"ci\"}}"
       - "-X github.com/veerendra2/gopackages/version.BuildDate={{.Date}}"
 
 kos:
