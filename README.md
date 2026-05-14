@@ -24,7 +24,7 @@
 
 ## Device Compatibility
 
-_Note: Compatible with all Gen 2+ devices (Plus, Pro, Mini) utilizing the standard Shelly RPC API._
+_Note: Compatible with all Gen 2+ devices utilizing the standard Shelly RPC API._
 
 | Device                                                                                     | Tested |
 | ------------------------------------------------------------------------------------------ | ------ |
