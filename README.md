@@ -8,10 +8,12 @@
 <p align="center">Prometheus exporter for Shelly Gen 2+ devices.</p>
 
 <p align="center">
-  <a href="https://github.com/veerendra2/shelly-plug-exporter/actions"><img src="https://github.com/veerendra2/shelly-plug-exporter/workflows/CI/badge.svg" alt="Build Status"></a>
-  <a href="https://goreportcard.com/report/github.com/veerendra2/shelly-plug-exporter"><img src="https://goreportcard.com/badge/github.com/veerendra2/shelly-plug-exporter" alt="Go Report Card"></a>
-  <a href="https://github.com/veerendra2/shelly-plug-exporter/releases"><img src="https://img.shields.io/github/v/release/veerendra2/shelly-plug-exporter" alt="Release"></a>
-  <a href="https://github.com/veerendra2/shelly-plug-exporter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/veerendra2/shelly-plug-exporter" alt="License"></a>
+  <a href="https://github.com/veerendra2/shelly-device-exporter/actions"><img src="https://github.com/veerendra2/shelly-device-exporter/workflows/CI/badge.svg" alt="Build Status"></a>
+  <a href="https://goreportcard.com/report/github.com/veerendra2/shelly-device-exporter"><img src="https://goreportcard.com/badge/github.com/veerendra2/shelly-device-exporter" alt="Go Report Card"></a>
+  <a href="https://github.com/veerendra2/shelly-device-exporter/releases"><img src="https://img.shields.io/github/v/release/veerendra2/shelly-device-exporter" alt="Release"></a>
+  <a href="https://github.com/veerendra2/shelly-device-exporter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/veerendra2/shelly-device-exporter" alt="License"></a>
+  <a href="https://github.com/veerendra2/shelly-device-exporter/stargazers"><img src="https://img.shields.io/github/stars/veerendra2/shelly-device-exporter" alt="Stars"></a>
+  <a href="https://github.com/veerendra2/shelly-device-exporter/network/members"><img src="https://img.shields.io/github/forks/veerendra2/shelly-device-exporter" alt="Forks"></a>
 </p>
 
 ## Features
