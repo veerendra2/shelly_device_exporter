@@ -1,4 +1,4 @@
-module github.com/veerendra2/shelly-plug-exporter
+module github.com/veerendra2/shelly_plug_exporter
 
 go 1.26.3
 

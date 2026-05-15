@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/icholy/digest"
-	"github.com/veerendra2/shelly-plug-exporter/internal/config"
+	"github.com/veerendra2/shelly_plug_exporter/internal/config"
 )
 
 const (
