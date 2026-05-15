@@ -8,25 +8,25 @@
 <p align="center">Prometheus exporter for Shelly Gen 2+ devices.</p>
 
 <p align="center">
-  <a href="https://github.com/veerendra2/shelly-device-exporter/actions"><img src="https://github.com/veerendra2/shelly-device-exporter/workflows/CI/badge.svg" alt="Build Status"></a>
-  <a href="https://goreportcard.com/report/github.com/veerendra2/shelly-device-exporter"><img src="https://goreportcard.com/badge/github.com/veerendra2/shelly-device-exporter" alt="Go Report Card"></a>
-  <a href="https://github.com/veerendra2/shelly-device-exporter/releases"><img src="https://img.shields.io/github/v/release/veerendra2/shelly-device-exporter" alt="Release"></a>
-  <a href="https://github.com/veerendra2/shelly-device-exporter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/veerendra2/shelly-device-exporter" alt="License"></a>
-  <a href="https://github.com/veerendra2/shelly-device-exporter/stargazers"><img src="https://img.shields.io/github/stars/veerendra2/shelly-device-exporter" alt="Stars"></a>
-  <a href="https://github.com/veerendra2/shelly-device-exporter/network/members"><img src="https://img.shields.io/github/forks/veerendra2/shelly-device-exporter" alt="Forks"></a>
+  <a href="https://github.com/veerendra2/shelly_device_exporter/actions"><img src="https://github.com/veerendra2/shelly_device_exporter/workflows/CI/badge.svg" alt="Build Status"></a>
+  <a href="https://goreportcard.com/report/github.com/veerendra2/shelly_device_exporter"><img src="https://goreportcard.com/badge/github.com/veerendra2/shelly_device_exporter" alt="Go Report Card"></a>
+  <a href="https://github.com/veerendra2/shelly_device_exporter/releases"><img src="https://img.shields.io/github/v/release/veerendra2/shelly_device_exporter" alt="Release"></a>
+  <a href="https://github.com/veerendra2/shelly_device_exporter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/veerendra2/shelly_device_exporter" alt="License"></a>
+  <a href="https://github.com/veerendra2/shelly_device_exporter/stargazers"><img src="https://img.shields.io/github/stars/veerendra2/shelly_device_exporter" alt="Stars"></a>
+  <a href="https://github.com/veerendra2/shelly_device_exporter/network/members"><img src="https://img.shields.io/github/forks/veerendra2/shelly_device_exporter" alt="Forks"></a>
 </p>
 
 ## Features
 
-| Feature                     | Description                                                                                                              |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| **Concurrent Scraping**     | Uses a configurable worker pool to fetch statuses from multiple devices simultaneously without overwhelming the network. |
-| **Authentication**          | Supports Shelly's required Digest Authentication out of the box.                                                         |
-| **Energy Cost Calculation** | Automatically calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields.               |
+| Feature                     | Description                                                                                                |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------- |
+| **Concurrent Scraping**     | Dynamically-sized worker pool to fetch statuses from multiple devices simultaneously.                      |
+| **Authentication**          | Supports Shelly's required Digest Authentication out of the box.                                           |
+| **Energy Cost Calculation** | Automatically calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields. |
 
 ## Device Compatibility
 
-_Note: Compatible with all Gen 2+ devices utilizing the standard Shelly RPC API._
+_Compatible with all Gen 2+ devices utilizing the standard Shelly RPC API._
 
 | Device                                                                                     | Tested |
 | ------------------------------------------------------------------------------------------ | ------ |
@@ -34,14 +34,16 @@ _Note: Compatible with all Gen 2+ devices utilizing the standard Shelly RPC API.
 
 ## Exported Metrics
 
+_See list of [Metrics](https://github.com/veerendra2/shelly_device_exporter/wiki)_
+
 | Component                                                                        | Status |
 | -------------------------------------------------------------------------------- | ------ |
 | [Switch](https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Switch) | ✅     |
 | [System](https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Sys)    | ✅     |
 
-_See [Metrics](#metrics)_
+## Deployment
 
-## Usage
+### Usage
 
 ```bash
 Usage: shelly_device_exporter [flags]
@@ -49,16 +51,16 @@ Usage: shelly_device_exporter [flags]
 Prometheus exporter for Shelly Gen 2+ devices.
 
 Flags:
-  -h, --help                    Show context-sensitive help.
-      --address=":8080"         The address where the server should listen on ($ADDRESS).
-      --config="config.yml"     Configuration file path ($CONFIG_FILE)
-      --log-format="console"    Set the output format of the logs. Must be "console" or "json" ($LOG_FORMAT).
-      --log-level=INFO          Set the log level. Must be "DEBUG", "INFO", "WARN" or "ERROR" ($LOG_LEVEL).
-      --log-add-source          Whether to add source file and line number to log records ($LOG_ADD_SOURCE).
-      --version                 Print version information and exit
+  -h, --help                        Show context-sensitive help.
+      --address=":8080"             The address where the server should listen on ($ADDRESS).
+      --config-file="config.yml"    Configuration file path ($CONFIG_FILE)
+      --log-format="console"        Set the output format of the logs. Must be "console" or "json" ($LOG_FORMAT).
+      --log-level=INFO              Set the log level. Must be "DEBUG", "INFO", "WARN" or "ERROR" ($LOG_LEVEL).
+      --log-add-source              Whether to add source file and line number to log records ($LOG_ADD_SOURCE).
+      --version                     Print version information and exit
 ```
 
-## Configuration
+### Configuration
 
 The exporter requires a configuration file to know which devices to poll and how to connect to them.
 
@@ -69,18 +71,31 @@ The exporter requires a configuration file to know which devices to poll and how
 price_per_kwh: 0.10
 currency: "EUR"
 
-# (Optional) Controls the worker pool size for parallel requests. Default is 4.
-max_concurrent_device_connections: 10
-
 # List of Shelly devices to monitor
 devices:
-  - name: "home-plug"
+  - name: "home-servers"
     address: "http://SHELLY_DEVICE_IP"
     username: "admin" # Optional, defaults to "admin"
     password: "YOUR_PASSWORD"
 ```
 
-## Prometheus Scrape Configuration
+### Docker Compose
+
+```yaml
+services:
+  shellydeviceexporter:
+    image: ghcr.io/veerendra2/shelly_device_exporter:latest
+    container_name: endoflife_exporter
+    restart: unless-stopped
+    environment:
+      CONFIG_FILE: "/config.yml"
+    volumes:
+      - ./config.yml:/config.yml
+    ports:
+      - 8080:8080
+```
+
+### Prometheus Scrape Configuration
 
 Add the following to your `prometheus.yml` scrape configurations to collect metrics from the exporter:
 
@@ -88,37 +103,13 @@ Add the following to your `prometheus.yml` scrape configurations to collect metr
 scrape_configs:
   - job_name: "shelly_devices"
     # Adjust scrape interval based on your needs
-    scrape_interval: 15s
+    scrape_interval: 30s
+    scrape_timeout: 15s
     static_configs:
-      - targets: ["localhost:8080"] # Replace with the exporter's address
+      - targets: ["shellydeviceexporter:8080"] # Replace with the exporter's address
 ```
 
-## Docker
-
-You can run the exporter easily using Docker. Make sure to mount your `config.yml` file into the container.
-
-### Docker Run
-
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -v $(pwd)/config.yml:/app/config.yml:ro \
-  ghcr.io/veerendra2/shelly-plug-exporter:latest
-```
-
-### Docker Compose
-
-```yaml
-version: "3.8"
-services:
-  shelly-exporter:
-    image: ghcr.io/veerendra2/shelly-plug-exporter:latest
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./config.yml:/app/config.yml:ro
-    restart: unless-stopped
-```
+## Development
 
 ## Build & Test
 
@@ -162,50 +153,4 @@ curl 'http://YOUR_SHELLY_IP/shelly'
 
 # Get device status using Digest Auth
 curl --digest -u admin:"YOUR_PASSWORD" 'http://YOUR_SHELLY_IP/rpc/Shelly.GetStatus'
-```
-
----
-
-## Metrics
-
-```text
-# HELP shelly_device_apower Last measured instantaneous active power (in Watts) delivered to the attached load.
-# TYPE shelly_device_apower gauge
-shelly_device_apower{name="home"} 15.5
-# HELP shelly_device_current Last measured current in Amperes.
-# TYPE shelly_device_current gauge
-shelly_device_current{name="home"} 0.123
-# HELP shelly_device_energy_cost_total Total energy cost total.
-# TYPE shelly_device_energy_cost_total gauge
-shelly_device_energy_cost_total{currency="EUR",name="home"} 0.9173950000000002
-# HELP shelly_device_freq Last measured network frequency in Hz.
-# TYPE shelly_device_freq gauge
-shelly_device_freq{name="home"} 50
-# HELP shelly_device_fs_free Size of the free file system in Bytes.
-# TYPE shelly_device_fs_free gauge
-shelly_device_fs_free{name="home"} 458752
-# HELP shelly_device_fs_size Total size of the file system in Bytes.
-# TYPE shelly_device_fs_size gauge
-shelly_device_fs_size{name="home"} 917504
-# HELP shelly_device_ram_free Size of the free RAM in the system in Bytes.
-# TYPE shelly_device_ram_free gauge
-shelly_device_ram_free{name="home"} 105692
-# HELP shelly_device_ram_size Total size of the RAM in the system in Bytes.
-# TYPE shelly_device_ram_size gauge
-shelly_device_ram_size{name="home"} 260676
-# HELP shelly_device_restart_required True if restart is required, false otherwise.
-# TYPE shelly_device_restart_required gauge
-shelly_device_restart_required{name="home"} 0
-# HELP shelly_device_sys_mac Mac address of the device.
-# TYPE shelly_device_sys_mac gauge
-shelly_device_sys_mac{mac="0892724CCD80",name="home"} 0
-# HELP shelly_device_temperature_celsius Temperature in Celsius.
-# TYPE shelly_device_temperature_celsius gauge
-shelly_device_temperature_celsius{name="home"} 38.5
-# HELP shelly_device_uptime Time in seconds since last reboot.
-# TYPE shelly_device_uptime gauge
-shelly_device_uptime{name="home"} 1.987289e+06
-# HELP shelly_device_voltage Last measured voltage in Volts.
-# TYPE shelly_device_voltage gauge
-shelly_device_voltage{name="home"} 237.2
 ```

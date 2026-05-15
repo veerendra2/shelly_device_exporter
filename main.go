@@ -24,10 +24,10 @@ import (
 const appName = "shelly_device_exporter"
 
 var cli struct {
-	Address string           `env:"ADDRESS" default:":8080" help:"The address where the server should listen on."`
-	Config  string           `env:"CONFIG_FILE" default:"config.yml" help:"Configuration file path"`
-	Log     slogger.Config   `embed:"" prefix:"log." envprefix:"LOG_"`
-	Version kong.VersionFlag `name:"version" help:"Print version information and exit"`
+	Address    string           `env:"ADDRESS" default:":8080" help:"The address where the server should listen on."`
+	ConfigFile string           `env:"CONFIG_FILE" default:"config.yml" help:"Configuration file path"`
+	Log        slogger.Config   `embed:"" prefix:"log-" envprefix:"LOG_"`
+	Version    kong.VersionFlag `name:"version" help:"Print version information and exit"`
 }
 
 func main() {
@@ -47,14 +47,13 @@ func main() {
 
 	slog.SetDefault(slogger.New(cli.Log))
 
-	slog.Info("Starting shelly_device_exporter - A Prometheus exporter for Shelly Gen 2+ devices")
 	slog.Info("Version information", version.Info()...)
 	slog.Info("Build context", version.BuildContext()...)
 
-	slog.Info("Loading configuration", "file", cli.Config)
-	cfg, err := config.LoadConfig(cli.Config)
+	slog.Info("Loading configuration", "file", cli.ConfigFile)
+	cfg, err := config.LoadConfig(cli.ConfigFile)
 	if err != nil {
-		slog.Error("Failed to load configuration", slog.Any("err", err))
+		slog.Error("Failed to load configuration", "error", err)
 		os.Exit(1)
 	}
 
@@ -66,14 +65,14 @@ func main() {
 
 	exporter, err := collector.New(shellyClient)
 	if err != nil {
-		slog.Error("Failed to create exporter", slog.Any("err", err))
+		slog.Error("Failed to create exporter", "error", err)
 		os.Exit(1)
 	}
 
 	prometheus.MustRegister(exporter)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if _, err = w.Write([]byte("<body>Metrics are available at <a href=\"/metrics\">/metrics</a></body>")); err != nil {
-			slog.Warn("Failed to write", slog.Any("err", err))
+			slog.Warn("Failed to write", "error", err)
 		}
 	})
 	http.Handle("/metrics", promhttp.Handler())

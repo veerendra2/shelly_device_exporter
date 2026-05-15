@@ -8,10 +8,7 @@ import (
 	"go.yaml.in/yaml/v2"
 )
 
-const (
-	defaultMaxConcurrentDeviceConnections = 4
-	defaultUsername                       = "admin"
-)
+const defaultUsername = "admin"
 
 type Device struct {
 	Name     string `yaml:"name" validate:"required"`
@@ -21,10 +18,9 @@ type Device struct {
 }
 
 type Config struct {
-	Devices                        []Device `yaml:"devices" validate:"required,min=1,dive"`
-	PricePerKWh                    *float64 `yaml:"price_per_kwh" validate:"omitempty,gte=0"`
-	Currency                       string   `yaml:"currency"`
-	MaxConcurrentDeviceConnections int      `yaml:"max_concurrent_device_connections" validate:"omitempty,gte=0"`
+	Devices     []Device `yaml:"devices" validate:"required,min=1,dive"`
+	PricePerKWh *float64 `yaml:"price_per_kwh" validate:"omitempty,gte=0"`
+	Currency    string   `yaml:"currency"`
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -53,10 +49,6 @@ func LoadConfig(filename string) (*Config, error) {
 }
 
 func (c *Config) setDefaults() {
-	if c.MaxConcurrentDeviceConnections == 0 {
-		c.MaxConcurrentDeviceConnections = defaultMaxConcurrentDeviceConnections
-	}
-
 	for i := range c.Devices {
 		if c.Devices[i].Username == "" {
 			c.Devices[i].Username = defaultUsername

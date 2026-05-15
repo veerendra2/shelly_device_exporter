@@ -58,14 +58,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 		// Collect Cost metrics
 		if status.Cost != nil {
-			ch <- prometheus.MustNewConstMetric(energyCostTotal, prometheus.GaugeValue, status.Cost.Value, status.Name, status.Cost.Currency)
+			ch <- prometheus.MustNewConstMetric(energyCostTotal, prometheus.CounterValue, status.Cost.Value, status.Name, status.Cost.Currency)
 		}
 
 		// Collect System metrics
 		if status.System != nil {
-			ch <- prometheus.MustNewConstMetric(sysMAC, prometheus.GaugeValue, 0, status.System.MAC, status.Name)
+			ch <- prometheus.MustNewConstMetric(sysMAC, prometheus.GaugeValue, 1.0, status.System.MAC, status.Name)
 			ch <- prometheus.MustNewConstMetric(restartRequired, prometheus.GaugeValue, boolToFloat64(status.System.RestartRequired), status.Name)
-			ch <- prometheus.MustNewConstMetric(uptime, prometheus.GaugeValue, status.System.Uptime, status.Name)
+			ch <- prometheus.MustNewConstMetric(uptime, prometheus.CounterValue, status.System.Uptime, status.Name)
 			ch <- prometheus.MustNewConstMetric(ramSize, prometheus.GaugeValue, status.System.RAMSize, status.Name)
 			ch <- prometheus.MustNewConstMetric(ramFree, prometheus.GaugeValue, status.System.RAMFree, status.Name)
 			ch <- prometheus.MustNewConstMetric(fsSize, prometheus.GaugeValue, status.System.FSSize, status.Name)

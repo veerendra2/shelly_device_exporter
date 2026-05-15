@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"path"
@@ -17,13 +18,13 @@ import (
 )
 
 const statusPath = "/rpc/Shelly.GetStatus"
+const maxConcurrentDeviceConnections = 4
 
 type Client struct {
-	devices       []config.Device
-	pricePerKWh   *float64
-	currency      string
-	maxConcurrent int
-	costEnabled   bool
+	devices     []config.Device
+	pricePerKWh *float64
+	currency    string
+	costEnabled bool
 }
 
 type DeviceStatus struct {
@@ -40,6 +41,8 @@ type EnergyCost struct {
 	Currency string
 }
 
+// This exporter currently supports only the components below,
+// so the response is unmarshaled into these objects only.
 type StatusResponse struct {
 	System  *SystemStatus `json:"sys"`
 	Switch0 *SwitchStatus `json:"switch:0"`
@@ -67,6 +70,13 @@ func doRequest(ctx context.Context, addr string, username string, password strin
 		}
 	}
 
+	// TODO Remove below random sleeps, once testing is completed!!
+	// Add random sleep (1-5 seconds) for testing to mitigate 429 errors
+	sleepDuration := time.Duration(rand.Intn(5)+1) * time.Second
+	slog.Debug("Sleeping before request to mitigate 429", "device", requestUrl.Host, "duration", sleepDuration)
+	time.Sleep(sleepDuration)
+
+	slog.Debug("Connecting to shelly device", "device_address", addr)
 	resp, err := client.Do(req)
 	if err != nil {
 		return &status, err
@@ -101,8 +111,12 @@ func (c *Client) BulkStatus(ctx context.Context) []DeviceStatus {
 	jobs := make(chan config.Device, numDevices)
 	results := make(chan DeviceStatus, numDevices)
 
+	// Determine the optimal number of workers
+	numWorkers := min(numDevices, maxConcurrentDeviceConnections)
+	slog.Debug("Spawning workers to connect shelly devices", "count", numWorkers)
+
 	// Start workers
-	for w := 0; w < c.maxConcurrent; w++ {
+	for range numWorkers {
 		go func() {
 			for device := range jobs {
 				select {
@@ -171,10 +185,9 @@ func (c *Client) BulkStatus(ctx context.Context) []DeviceStatus {
 
 func New(cfg config.Config) (Client, error) {
 	return Client{
-		devices:       cfg.Devices,
-		pricePerKWh:   cfg.PricePerKWh,
-		maxConcurrent: cfg.MaxConcurrentDeviceConnections,
-		currency:      cfg.Currency,
-		costEnabled:   cfg.CostEnabled(),
+		devices:     cfg.Devices,
+		pricePerKWh: cfg.PricePerKWh,
+		currency:    cfg.Currency,
+		costEnabled: cfg.CostEnabled(),
 	}, nil
 }
