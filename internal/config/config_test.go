@@ -25,11 +25,13 @@ devices:
 `
 			tmpfile, err := os.CreateTemp("", "config*.yml")
 			Expect(err).NotTo(HaveOccurred())
-			defer os.Remove(tmpfile.Name())
+			defer func() {
+				_ = os.Remove(tmpfile.Name())
+			}()
 
 			_, err = tmpfile.Write([]byte(yaml))
 			Expect(err).NotTo(HaveOccurred())
-			tmpfile.Close()
+			_ = tmpfile.Close()
 
 			cfg, err := config.LoadConfig(tmpfile.Name())
 			Expect(err).NotTo(HaveOccurred())
@@ -48,11 +50,13 @@ devices:
 `
 			tmpfile, err := os.CreateTemp("", "config-fail*.yml")
 			Expect(err).NotTo(HaveOccurred())
-			defer os.Remove(tmpfile.Name())
+			defer func() {
+				_ = os.Remove(tmpfile.Name())
+			}()
 
 			_, err = tmpfile.Write([]byte(yaml))
 			Expect(err).NotTo(HaveOccurred())
-			tmpfile.Close()
+			_ = tmpfile.Close()
 
 			_, err = config.LoadConfig(tmpfile.Name())
 			Expect(err).To(HaveOccurred())

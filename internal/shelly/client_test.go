@@ -29,7 +29,7 @@ var _ = Describe("Shelly Client", func() {
 		server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"sys":{"mac":"001122334455","uptime":100},"switch:0":{"apower":10.5}}`))
+			_, _ = w.Write([]byte(`{"sys":{"mac":"001122334455","uptime":100},"switch:0":{"apower":10.5}}`))
 		}))
 
 		cfg := config.Config{
