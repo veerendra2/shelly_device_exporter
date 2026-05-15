@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"path"
@@ -17,8 +16,10 @@ import (
 	"github.com/veerendra2/shelly-plug-exporter/internal/config"
 )
 
-const statusPath = "/rpc/Shelly.GetStatus"
-const maxConcurrentDeviceConnections = 4
+const (
+	statusPath                     = "/rpc/Shelly.GetStatus"
+	maxConcurrentDeviceConnections = 4
+)
 
 type Client struct {
 	devices     []config.Device
@@ -69,12 +70,6 @@ func doRequest(ctx context.Context, addr string, username string, password strin
 			Transport: http.DefaultTransport,
 		}
 	}
-
-	// TODO Remove below random sleeps, once testing is completed!!
-	// Add random sleep (1-5 seconds) for testing to mitigate 429 errors
-	sleepDuration := time.Duration(rand.Intn(5)+1) * time.Second
-	slog.Debug("Sleeping before request to mitigate 429", "device", requestUrl.Host, "duration", sleepDuration)
-	time.Sleep(sleepDuration)
 
 	slog.Debug("Connecting to shelly device", "device_address", addr)
 	resp, err := client.Do(req)
