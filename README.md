@@ -111,7 +111,7 @@ scrape_configs:
 
 ## Development
 
-## Build & Test
+### Build & Test
 
 - Using [Taskfile](https://taskfile.dev/)
 
@@ -143,7 +143,7 @@ _Install GoReleaser: [Installation Guide](https://goreleaser.com/install/)_
 goreleaser release --snapshot --clean
 ```
 
-## Shelly API Reference
+### Shelly API Reference
 
 For debugging purposes, you can directly access your Shelly devices via curl:
 

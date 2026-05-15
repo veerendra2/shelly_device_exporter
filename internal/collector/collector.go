@@ -14,6 +14,7 @@ type Exporter struct {
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- apower
+	ch <- aenergyTotal
 	ch <- voltage
 	ch <- current
 	ch <- pf
@@ -38,6 +39,9 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		if status.Switch != nil {
 			if status.Switch.APower != nil {
 				ch <- prometheus.MustNewConstMetric(apower, prometheus.GaugeValue, *status.Switch.APower, status.Name)
+			}
+			if status.Switch.AEnergy != nil {
+				ch <- prometheus.MustNewConstMetric(aenergyTotal, prometheus.CounterValue, status.Switch.AEnergy.Total, status.Name)
 			}
 			if status.Switch.Voltage != nil {
 				ch <- prometheus.MustNewConstMetric(voltage, prometheus.GaugeValue, *status.Switch.Voltage, status.Name)

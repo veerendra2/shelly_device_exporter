@@ -13,6 +13,13 @@ var (
 			"name",
 		}, nil,
 	)
+	aenergyTotal = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "aenergy_total_watt_hours"),
+		"Total active energy consumed in Watt-hours (Wh).",
+		[]string{
+			"name",
+		}, nil,
+	)
 	voltage = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "voltage"),
 		"Last measured voltage in Volts.",
@@ -50,8 +57,8 @@ var (
 	)
 
 	energyCostTotal = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "energy_cost_total"),
-		"The total cost of energy consumed by the device since the last reboot, calculated using the configured price per kWh.",
+		prometheus.BuildFQName(namespace, "", "aenergy_cost_total"),
+		"The total cost of active energy consumed by the device since the last reboot, calculated using the configured price per kWh.",
 		[]string{
 			"name",
 			"currency",
