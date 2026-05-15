@@ -14,6 +14,7 @@
   <a href="https://github.com/veerendra2/shelly_device_exporter/blob/main/LICENSE"><img src="https://img.shields.io/github/license/veerendra2/shelly_device_exporter" alt="License"></a>
   <a href="https://github.com/veerendra2/shelly_device_exporter/stargazers"><img src="https://img.shields.io/github/stars/veerendra2/shelly_device_exporter" alt="Stars"></a>
   <a href="https://github.com/veerendra2/shelly_device_exporter/network/members"><img src="https://img.shields.io/github/forks/veerendra2/shelly_device_exporter" alt="Forks"></a>
+  <a href="https://ghcr.io/veerendra2/shelly_device_exporter"><img src="https://img.shields.io/badge/ghcr.io-amd64%20%7C%20arm64-blue?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
 </p>
 
 ## Features
@@ -34,7 +35,7 @@ _Compatible with all Gen 2+ devices utilizing the standard Shelly RPC API._
 
 ## Exported Metrics
 
-_See list of [Metrics](https://github.com/veerendra2/shelly_device_exporter/wiki)_
+_See list of [Metrics](https://github.com/veerendra2/shelly_device_exporter/wiki/Metrics)_
 
 | Component                                                                        | Status |
 | -------------------------------------------------------------------------------- | ------ |
