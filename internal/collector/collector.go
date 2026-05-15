@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/veerendra2/shelly-plug-exporter/internal/shelly"
+	"github.com/veerendra2/shelly_plug_exporter/internal/shelly"
 )
 
 type Exporter struct {
@@ -14,6 +14,7 @@ type Exporter struct {
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- apower
+	ch <- aenergyTotal
 	ch <- voltage
 	ch <- current
 	ch <- pf
@@ -39,6 +40,9 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			if status.Switch.APower != nil {
 				ch <- prometheus.MustNewConstMetric(apower, prometheus.GaugeValue, *status.Switch.APower, status.Name)
 			}
+			if status.Switch.AEnergy != nil {
+				ch <- prometheus.MustNewConstMetric(aenergyTotal, prometheus.CounterValue, status.Switch.AEnergy.Total, status.Name)
+			}
 			if status.Switch.Voltage != nil {
 				ch <- prometheus.MustNewConstMetric(voltage, prometheus.GaugeValue, *status.Switch.Voltage, status.Name)
 			}
@@ -58,14 +62,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 		// Collect Cost metrics
 		if status.Cost != nil {
-			ch <- prometheus.MustNewConstMetric(energyCostTotal, prometheus.GaugeValue, status.Cost.Value, status.Name, status.Cost.Currency)
+			ch <- prometheus.MustNewConstMetric(energyCostTotal, prometheus.CounterValue, status.Cost.Value, status.Name, status.Cost.Currency)
 		}
 
 		// Collect System metrics
 		if status.System != nil {
-			ch <- prometheus.MustNewConstMetric(sysMAC, prometheus.GaugeValue, 0, status.System.MAC, status.Name)
+			ch <- prometheus.MustNewConstMetric(sysMAC, prometheus.GaugeValue, 1.0, status.System.MAC, status.Name)
 			ch <- prometheus.MustNewConstMetric(restartRequired, prometheus.GaugeValue, boolToFloat64(status.System.RestartRequired), status.Name)
-			ch <- prometheus.MustNewConstMetric(uptime, prometheus.GaugeValue, status.System.Uptime, status.Name)
+			ch <- prometheus.MustNewConstMetric(uptime, prometheus.CounterValue, status.System.Uptime, status.Name)
 			ch <- prometheus.MustNewConstMetric(ramSize, prometheus.GaugeValue, status.System.RAMSize, status.Name)
 			ch <- prometheus.MustNewConstMetric(ramFree, prometheus.GaugeValue, status.System.RAMFree, status.Name)
 			ch <- prometheus.MustNewConstMetric(fsSize, prometheus.GaugeValue, status.System.FSSize, status.Name)

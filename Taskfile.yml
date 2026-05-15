@@ -4,7 +4,7 @@ silent: true
 
 vars:
   MAIN_FILE: main.go
-  APP_NAME: shelly-device-exporter
+  APP_NAME: shelly_device_exporter
   GOPATH_BIN:
     sh: echo "$(go env GOPATH)/bin"
   BRANCH:
@@ -32,7 +32,7 @@ tasks:
     env:
       LOG_FORMAT: console
       LOG_ADD_SOURCE: false
-      LOG_LEVEL: info
+      LOG_LEVEL: debug
 
   lint:
     desc: "Run static analysis and code linting using golangci-lint"

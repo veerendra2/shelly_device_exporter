@@ -1,0 +1,80 @@
+---
+name: shelly-device-exporter
+services:
+  shellydeviceexporter:
+    build: .
+    container_name: shellydeviceexporter
+    volumes:
+      - ./config.yml:/config.yml
+    environment:
+      CONFIG_FILE: /config.yml
+      LOG_LEVEL: debug
+    restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+      - traefik.enable=false
+    hostname: shellydeviceexporter
+    ports:
+      - 8080:8080
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - prometheus_data:/prometheus
+    configs:
+      - source: prometheus-config
+        target: /etc/prometheus/prometheus.yml
+    ports:
+      - 9091:9090
+    depends_on:
+      - shellydeviceexporter
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    configs:
+      - source: grafana-datasource
+        target: /etc/grafana/provisioning/datasources/prometheus.yml
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+
+configs:
+  prometheus-config:
+    content: |
+      global:
+        scrape_interval: 30s
+
+      scrape_configs:
+        - job_name: shelly_device_exporter
+          static_configs:
+            - targets:
+                - shellydeviceexporter:8080
+
+  grafana-datasource:
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus:9090
+          isDefault: true
+
+volumes:
+  grafana_data:
+    name: grafana_data
+  prometheus_data:
+    name: prometheus_data

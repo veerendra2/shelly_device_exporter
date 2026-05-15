@@ -7,8 +7,15 @@ const namespace = "shelly_device"
 var (
 	// ******* Switch **********
 	apower = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "apower"),
+		prometheus.BuildFQName(namespace, "", "apower_watts"),
 		"Last measured instantaneous active power (in Watts) delivered to the attached load.",
+		[]string{
+			"name",
+		}, nil,
+	)
+	aenergyTotal = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "aenergy_watt_hours_total"),
+		"Total active energy consumed in Watt-hours (Wh).",
 		[]string{
 			"name",
 		}, nil,
@@ -21,7 +28,7 @@ var (
 		}, nil,
 	)
 	current = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "current"),
+		prometheus.BuildFQName(namespace, "", "current_amperes"),
 		"Last measured current in Amperes.",
 		[]string{
 			"name",
@@ -50,8 +57,8 @@ var (
 	)
 
 	energyCostTotal = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "energy_cost_total"),
-		"Total energy cost total.",
+		prometheus.BuildFQName(namespace, "", "aenergy_cost_total"),
+		"The total cost of active energy consumed by the device since the last reboot, calculated using the configured price per kWh.",
 		[]string{
 			"name",
 			"currency",
@@ -60,8 +67,8 @@ var (
 
 	// ******** System ***********
 	sysMAC = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "sys_mac"),
-		"Mac address of the device.",
+		prometheus.BuildFQName(namespace, "", "sys_mac_info"),
+		"Device MAC address information. Value is always 1.",
 		[]string{
 			"mac",
 			"name",
@@ -75,7 +82,7 @@ var (
 		}, nil,
 	)
 	uptime = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "uptime"),
+		prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
 		"Time in seconds since last reboot.",
 		[]string{
 			"name",

@@ -20,14 +20,14 @@ builds:
       - "-X github.com/veerendra2/gopackages/version.Version={{.Version}}"
       - "-X github.com/veerendra2/gopackages/version.Revision={{.ShortCommit}}"
       - "-X github.com/veerendra2/gopackages/version.Branch={{.Branch}}"
-      - "-X github.com/veerendra2/gopackages/version.BuildUser={{envOrDefault \"USER\" \"ci\"}}"
+      - '-X github.com/veerendra2/gopackages/version.BuildUser={{envOrDefault "USER" "ci"}}'
       - "-X github.com/veerendra2/gopackages/version.BuildDate={{.Date}}"
 
 kos:
   - id: distroless-image
     build: binaries
     repositories:
-      - ghcr.io/veerendra2/shelly-device-exporter
+      - ghcr.io/veerendra2/shelly_device_exporter
     tags:
       - "{{.Version}}"
       - latest
