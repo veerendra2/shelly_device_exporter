@@ -18,11 +18,11 @@
 
 ## Features
 
-| Feature                     | Description                                                                                                |
-| :-------------------------- | :--------------------------------------------------------------------------------------------------------- |
-| **Concurrent Scraping**     | Dynamically-sized worker pool to fetch statuses from multiple devices simultaneously.                      |
-| **Authentication**          | Supports Shelly's required Digest Authentication out of the box.                                           |
-| **Energy Cost Calculation** | Automatically calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields. |
+| Feature                 | Description                                                                                                |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------- |
+| Concurrent Scraping     | Dynamically-sized worker pool to fetch statuses from multiple devices simultaneously.                      |
+| Authentication          | Supports Shelly's required Digest Authentication out of the box.                                           |
+| Energy Cost Calculation | Automatically calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields. |
 
 ## Device Compatibility
 
@@ -108,6 +108,12 @@ scrape_configs:
     static_configs:
       - targets: ["shellydeviceexporter:8080"] # Replace with the exporter's address
 ```
+
+### Grafana Dashboard
+
+- [Download Grafana Dashbaord Json](./assets/shelly-device-exporter-dashboard.json)
+
+![Dashboard Image](./assets/shelly-device-exporter.png)
 
 ## Development
 

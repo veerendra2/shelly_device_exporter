@@ -14,7 +14,7 @@ var (
 		}, nil,
 	)
 	aenergyTotal = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "aenergy_total_watt_hours"),
+		prometheus.BuildFQName(namespace, "", "aenergy_watt_hours_total"),
 		"Total active energy consumed in Watt-hours (Wh).",
 		[]string{
 			"name",
@@ -82,7 +82,7 @@ var (
 		}, nil,
 	)
 	uptime = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "uptime"),
+		prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
 		"Time in seconds since last reboot.",
 		[]string{
 			"name",
