@@ -1,6 +1,6 @@
 module github.com/veerendra2/shelly-plug-exporter
 
-go 1.26
+go 1.26.3
 
 require (
 	github.com/alecthomas/kong v1.15.0
