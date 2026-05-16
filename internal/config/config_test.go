@@ -67,7 +67,9 @@ devices:
 		It("should replace {{ env \"VAR\" }} with the environment variable value", func() {
 			err := os.Setenv("TEST_PASSWORD", "secret-password")
 			Expect(err).NotTo(HaveOccurred())
-			defer os.Unsetenv("TEST_PASSWORD")
+			defer func() {
+				_ = os.Unsetenv("TEST_PASSWORD")
+			}()
 
 			yaml := `
 devices:

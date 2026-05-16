@@ -167,6 +167,8 @@ goreleaser release --snapshot --clean
 
 ### Shelly API Reference
 
+- [Authentication](https://shelly-api-docs.shelly.cloud/gen2/General/Authentication/)
+
 For debugging purposes, you can directly access your Shelly devices via curl:
 
 ```bash
