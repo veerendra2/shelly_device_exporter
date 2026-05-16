@@ -1,8 +1,11 @@
 package config
 
 import (
+	"bytes"
+	"fmt"
 	"log/slog"
 	"os"
+	"text/template"
 
 	"github.com/go-playground/validator/v10"
 	"go.yaml.in/yaml/v2"
@@ -29,9 +32,20 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, err
 	}
 
-	conf := &Config{}
-	err = yaml.Unmarshal(data, conf)
+	tmpl, err := template.New("config").Funcs(template.FuncMap{
+		"env": os.Getenv,
+	}).Parse(string(data))
 	if err != nil {
+		return nil, fmt.Errorf("failed to parse config template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, nil); err != nil {
+		return nil, fmt.Errorf("failed to execute config template: %w", err)
+	}
+
+	conf := &Config{}
+	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
 		return nil, err
 	}
 
