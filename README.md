@@ -129,7 +129,7 @@ scrape_configs:
 
 - [Download Grafana Dashbaord Json](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-dashboard.json)
 
-![Dashboard Image](./assets/shelly-device-exporter.png)
+![Dashboard Image](./assets/shelly-device-exporter-dashboard.png)
 
 ## Development
 
