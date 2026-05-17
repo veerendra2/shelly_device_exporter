@@ -68,6 +68,7 @@ func doRequest(ctx context.Context, addr string, username string, password strin
 			Username:  username,
 			Password:  password,
 			Transport: http.DefaultTransport,
+			NoReuse:   true,
 		}
 	}
 

@@ -62,4 +62,58 @@ devices:
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Context("When using environment variable templates", func() {
+		It("should replace {{ env \"VAR\" }} with the environment variable value", func() {
+			err := os.Setenv("TEST_PASSWORD", "secret-password")
+			Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				_ = os.Unsetenv("TEST_PASSWORD")
+			}()
+
+			yaml := `
+devices:
+  - name: "test-device"
+    address: "http://1.2.3.4"
+    password: '{{ env "TEST_PASSWORD" }}'
+`
+			tmpfile, err := os.CreateTemp("", "config-env*.yml")
+			Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				_ = os.Remove(tmpfile.Name())
+			}()
+
+			_, err = tmpfile.Write([]byte(yaml))
+			Expect(err).NotTo(HaveOccurred())
+			_ = tmpfile.Close()
+
+			cfg, err := config.LoadConfig(tmpfile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.Devices).To(HaveLen(1))
+			Expect(cfg.Devices[0].Password).To(Equal("secret-password"))
+		})
+
+		It("should support direct values without templating", func() {
+			yaml := `
+devices:
+  - name: "test-device"
+    address: "http://1.2.3.4"
+    password: "direct-password"
+`
+			tmpfile, err := os.CreateTemp("", "config-direct*.yml")
+			Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				_ = os.Remove(tmpfile.Name())
+			}()
+
+			_, err = tmpfile.Write([]byte(yaml))
+			Expect(err).NotTo(HaveOccurred())
+			_ = tmpfile.Close()
+
+			cfg, err := config.LoadConfig(tmpfile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.Devices).To(HaveLen(1))
+			Expect(cfg.Devices[0].Password).To(Equal("direct-password"))
+		})
+	})
 })

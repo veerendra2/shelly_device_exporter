@@ -80,20 +80,35 @@ devices:
     password: "YOUR_PASSWORD"
 ```
 
+#### Environment Variable Templating
+
+The configuration file supports environment variable templating using the `{{ env "VAR" }}` syntax.
+
+```yaml
+devices:
+  - name: "home-servers"
+    address: "http://192.168.0.6"
+    username: "admin"
+    password: '{{ env "SHELLY_DEVICE1_PASSWORD" }}'
+```
+
 ### Docker Compose
 
 ```yaml
+---
+name: shelly-device-exporter
 services:
-  shellydeviceexporter:
+  shelly-device-exporter:
     image: ghcr.io/veerendra2/shelly_device_exporter:latest
-    container_name: endoflife_exporter
-    restart: unless-stopped
-    environment:
-      CONFIG_FILE: "/config.yml"
+    container_name: shelly-device-exporter
     volumes:
       - ./config.yml:/config.yml
-    ports:
-      - 8080:8080
+    environment:
+      CONFIG_FILE: /config.yml
+      SHELLY_DEVICE1_PASSWORD: ${SHELLY_DEVICE1_PASSWORD}
+    restart: unless-stopped
+    user: ${PUID}:${PGID}
+    hostname: shelly-device-exporter
 ```
 
 ### Prometheus Scrape Configuration
@@ -107,14 +122,14 @@ scrape_configs:
     scrape_interval: 30s
     scrape_timeout: 15s
     static_configs:
-      - targets: ["shellydeviceexporter:8080"] # Replace with the exporter's address
+      - targets: ["shelly-device-exporter:8080"] # Replace with the exporter's address
 ```
 
 ### Grafana Dashboard
 
-- [Download Grafana Dashbaord Json](./assets/shelly-device-exporter-dashboard.json)
+- [Download Grafana Dashbaord Json](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-dashboard.json)
 
-![Dashboard Image](./assets/shelly-device-exporter.png)
+![Dashboard Image](./assets/shelly-device-exporter-dashboard.png)
 
 ## Development
 
@@ -151,6 +166,8 @@ goreleaser release --snapshot --clean
 ```
 
 ### Shelly API Reference
+
+- [Authentication](https://shelly-api-docs.shelly.cloud/gen2/General/Authentication/)
 
 For debugging purposes, you can directly access your Shelly devices via curl:
 

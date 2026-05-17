@@ -9,6 +9,7 @@ services:
     environment:
       CONFIG_FILE: /config.yml
       LOG_LEVEL: debug
+      SHELLY_PASSWORD: ${SHELLY_PASSWORD}
     restart: unless-stopped
     labels:
       - com.centurylinklabs.watchtower.enable=true
