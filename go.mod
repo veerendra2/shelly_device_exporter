@@ -6,11 +6,11 @@ require (
 	github.com/alecthomas/kong v1.15.0
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/icholy/digest v1.1.0
-	github.com/onsi/ginkgo/v2 v2.28.3
-	github.com/onsi/gomega v1.40.0
+	github.com/onsi/ginkgo/v2 v2.29.0
+	github.com/onsi/gomega v1.41.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/veerendra2/gopackages v1.2.3
-	go.yaml.in/yaml/v2 v2.4.2
+	go.yaml.in/yaml/v2 v2.4.4
 )
 
 require (
