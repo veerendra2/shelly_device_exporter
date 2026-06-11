@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/icholy/digest"
-	"github.com/veerendra2/shelly_plug_exporter/internal/config"
+	"github.com/veerendra2/shelly_device_exporter/internal/config"
 )
 
 const (
@@ -79,7 +79,7 @@ func doRequest(ctx context.Context, addr string, username string, password strin
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			slog.Warn("Error while closing the response body", slog.Any("err", err))
+			slog.Warn("Error while closing the response body", slog.Any("error", err))
 		}
 	}()
 

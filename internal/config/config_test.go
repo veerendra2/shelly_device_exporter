@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/veerendra2/shelly_plug_exporter/internal/config"
+	"github.com/veerendra2/shelly_device_exporter/internal/config"
 )
 
 func TestConfig(t *testing.T) {

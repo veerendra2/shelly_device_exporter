@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/veerendra2/shelly_plug_exporter/internal/shelly"
+	"github.com/veerendra2/shelly_device_exporter/internal/shelly"
 )
 
 type Exporter struct {
