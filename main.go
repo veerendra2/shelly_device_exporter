@@ -16,9 +16,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/veerendra2/gopackages/slogger"
 	"github.com/veerendra2/gopackages/version"
-	"github.com/veerendra2/shelly_plug_exporter/internal/collector"
-	"github.com/veerendra2/shelly_plug_exporter/internal/config"
-	"github.com/veerendra2/shelly_plug_exporter/internal/shelly"
+	"github.com/veerendra2/shelly_device_exporter/internal/collector"
+	"github.com/veerendra2/shelly_device_exporter/internal/config"
+	"github.com/veerendra2/shelly_device_exporter/internal/shelly"
 )
 
 const appName = "shelly_device_exporter"
