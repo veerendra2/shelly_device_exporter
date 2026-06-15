@@ -5,8 +5,8 @@
     "name": "g7k7cl",
     "namespace": "default",
     "uid": "b080c18a-1ef5-4043-9e72-25934f42365f",
-    "resourceVersion": "1781524239087009",
-    "generation": 10,
+    "resourceVersion": "1781530899711996",
+    "generation": 21,
     "creationTimestamp": "2026-06-14T22:41:23Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "3641301053214720"
@@ -22,7 +22,7 @@
       "grafana.app/sourcePath": "/etc/grafana/dashboards/shelly-device-exporter-dashboard.json",
       "grafana.app/sourceTimestamp": "1781476827000",
       "grafana.app/updatedBy": "user:afp5ilpudtgxsf",
-      "grafana.app/updatedTimestamp": "2026-06-15T11:50:39Z"
+      "grafana.app/updatedTimestamp": "2026-06-15T13:41:39Z"
     }
   },
   "spec": {
@@ -73,7 +73,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_apower_watts{job=\"$job\", instance=\"$instance\"}",
+                        "expr": "shelly_device_apower_watts{job=\"$job\"}",
                         "format": "time_series",
                         "legendFormat": "{{name}}",
                         "range": true
@@ -189,7 +189,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "label_replace(shelly_device_sys_mac_info{job=\"$job\", instance=\"$instance\"}, \"mac\", \"$1\", \"mac\", \"(.*)\")",
+                        "expr": "label_replace(shelly_device_sys_mac_info{job=\"$job\"}, \"mac\", \"$1\", \"mac\", \"(.*)\")",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -211,7 +211,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_restart_required{job=\"$job\", instance=\"$instance\"}",
+                        "expr": "shelly_device_restart_required{job=\"$job\"}",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -233,7 +233,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "1 - (shelly_device_ram_free{job=\"$job\", instance=\"$instance\"} / shelly_device_ram_size{job=\"$job\", instance=\"$instance\"})",
+                        "expr": "1 - (shelly_device_ram_free{job=\"$job\"} / shelly_device_ram_size{job=\"$job\"})",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -255,7 +255,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "1 - (shelly_device_fs_free{job=\"$job\", instance=\"$instance\"} / shelly_device_fs_size{job=\"$job\", instance=\"$instance\"})",
+                        "expr": "1 - (shelly_device_fs_free{job=\"$job\"} / shelly_device_fs_size{job=\"$job\"})",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -277,7 +277,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_uptime_seconds_total{job=\"$job\", instance=\"$instance\"}",
+                        "expr": "shelly_device_uptime_seconds_total{job=\"$job\"}",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -526,7 +526,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "sum(increase(shelly_device_aenergy_cost_total{job=\"$job\", instance=\"$instance\"}[$__range]))",
+                        "expr": "sum(increase(shelly_device_aenergy_cost_total{job=\"$job\"}[$__range]))",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "__auto",
@@ -610,7 +610,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "sum by (name) (increase(shelly_device_aenergy_cost_total[$__range]))",
+                        "expr": "sum by (name) (increase(shelly_device_aenergy_cost_total{job=\"$job\"}[$__range]))",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "{{name}}",
@@ -736,7 +736,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(shelly_device_aenergy_watt_hours_total{job=\"$job\", instance=\"$instance\"}[5m]) * 3600",
+                        "expr": "rate(shelly_device_aenergy_watt_hours_total{job=\"$job\"}[5m]) * 3600",
                         "format": "time_series",
                         "legendFormat": "{{name}}",
                         "range": true
@@ -852,7 +852,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_voltage{job=\"$job\", instance=\"$instance\"}",
+                        "expr": "shelly_device_voltage{job=\"$job\"}",
                         "format": "time_series",
                         "legendFormat": "{{name}}",
                         "range": true
@@ -972,7 +972,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_current_amperes{job=\"$job\", instance=\"$instance\"}",
+                        "expr": "shelly_device_current_amperes{job=\"$job\"}",
                         "format": "time_series",
                         "legendFormat": "{{name}}",
                         "range": true
@@ -1092,7 +1092,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_freq{job=\"$job\", instance=\"$instance\"}",
+                        "expr": "shelly_device_freq{job=\"$job\"}",
                         "format": "time_series",
                         "legendFormat": "{{name}}",
                         "range": true
@@ -1212,7 +1212,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(shelly_device_aenergy_cost_total{job=\"$job\", instance=\"$instance\"}[5m]) * 3600",
+                        "expr": "rate(shelly_device_aenergy_cost_total{job=\"$job\"}[5m]) * 3600",
                         "format": "time_series",
                         "legendFormat": "{{name}} - {{currency}}",
                         "range": true
@@ -1332,7 +1332,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "1 - (shelly_device_ram_free{job=\"$job\", instance=\"$instance\"} / shelly_device_ram_size{job=\"$job\", instance=\"$instance\"})",
+                        "expr": "1 - (shelly_device_ram_free{job=\"$job\"} / shelly_device_ram_size{job=\"$job\"})",
                         "format": "time_series",
                         "legendFormat": "{{name}}",
                         "range": true
@@ -1452,7 +1452,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "100 - (shelly_device_fs_free{job=\"$job\", instance=\"$instance\"}/shelly_device_fs_size{job=\"$job\", instance=\"$instance\"}) * 100",
+                        "expr": "100 - (shelly_device_fs_free{job=\"$job\"}/shelly_device_fs_size{job=\"$job\"}) * 100",
                         "format": "time_series",
                         "legendFormat": "{{name}}",
                         "range": true
@@ -1730,11 +1730,23 @@
     },
     "links": [
       {
-        "title": "Github Repo",
+        "title": "Github Repository",
         "type": "link",
-        "icon": "external link",
+        "icon": "bolt",
         "tooltip": "",
         "url": "https://github.com/veerendra2/shelly_device_exporter",
+        "tags": [],
+        "asDropdown": true,
+        "targetBlank": false,
+        "includeVars": false,
+        "keepTime": false
+      },
+      {
+        "title": "Shelly 2+ Device API Docs",
+        "type": "link",
+        "icon": "doc",
+        "tooltip": "",
+        "url": "https://shelly-api-docs.shelly.cloud/gen2/",
         "tags": [],
         "asDropdown": true,
         "targetBlank": false,
@@ -1744,7 +1756,10 @@
     ],
     "liveNow": false,
     "preload": false,
-    "tags": [],
+    "tags": [
+      "shelly",
+      "exporter"
+    ],
     "timeSettings": {
       "timezone": "browser",
       "from": "now-6h",
@@ -1804,7 +1819,7 @@
             "group": "victoriametrics-metrics-datasource",
             "version": "v0",
             "datasource": {
-              "name": "victoriametrics"
+              "name": "${datasource}"
             },
             "spec": {
               "qryType": 1,
@@ -1816,41 +1831,6 @@
           "regexApplyTo": "value",
           "sort": "alphabeticalAsc",
           "definition": "label_values(shelly_device_apower_watts,job)",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "instance",
-          "current": {
-            "text": "shelly-device-exporter:8080",
-            "value": "shelly-device-exporter:8080"
-          },
-          "label": "Instance",
-          "hide": "dontHide",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": false,
-          "query": {
-            "kind": "DataQuery",
-            "group": "victoriametrics-metrics-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "victoriametrics"
-            },
-            "spec": {
-              "qryType": 1,
-              "query": "label_values(shelly_device_apower_watts,instance)",
-              "refId": "VariableQueryEditor-VariableQuery"
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "alphabeticalAsc",
-          "definition": "label_values(shelly_device_apower_watts,instance)",
           "options": [],
           "multi": false,
           "includeAll": false,
