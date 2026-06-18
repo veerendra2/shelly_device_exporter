@@ -105,7 +105,6 @@ services:
       - ./config.yml:/config.yml
     environment:
       CONFIG_FILE: /config.yml
-      SHELLY_DEVICE1_PASSWORD: ${SHELLY_DEVICE1_PASSWORD}
     restart: unless-stopped
     user: ${PUID}:${PGID}
     hostname: shelly-device-exporter
@@ -127,7 +126,10 @@ scrape_configs:
 
 ### Grafana Dashboard
 
-- [Download Grafana Dashbaord Json](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-dashboard.json)
+| Dashboard                                                                                                                                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Grafana Dashboard Json (Prometheus Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-dashboard.json)            |
+| [Grafana Dashboard Json (Victoriametrics Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-victoriametrics.json) |
 
 ![Dashboard Image](./assets/shelly-device-exporter-dashboard.png)
 
