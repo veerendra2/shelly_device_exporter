@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -19,7 +19,7 @@ jobs:
           cache: true
 
       - name: Run Linter
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@v9.2.1
         with:
           version: latest
           working-directory: ./
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Go
         uses: actions/setup-go@v6
