@@ -12,13 +12,11 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/veerendra2/gopackages/slogger"
 	"github.com/veerendra2/gopackages/version"
-	"github.com/veerendra2/shelly_device_exporter/internal/collector"
 	"github.com/veerendra2/shelly_device_exporter/internal/config"
-	"github.com/veerendra2/shelly_device_exporter/internal/shelly"
+	"github.com/veerendra2/shelly_device_exporter/internal/probe"
 )
 
 const appName = "shelly_device_exporter"
@@ -57,24 +55,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	shellyClient, err := shelly.New(*cfg)
-	if err != nil {
-		slog.Error("Failed to create shelly client", "error", err)
-		os.Exit(1)
-	}
-
-	exporter, err := collector.New(shellyClient)
-	if err != nil {
-		slog.Error("Failed to create exporter", "error", err)
-		os.Exit(1)
-	}
-
-	prometheus.MustRegister(exporter)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if _, err = w.Write([]byte("<body>Metrics are available at <a href=\"/metrics\">/metrics</a></body>")); err != nil {
+		if _, err = w.Write([]byte("<body>Probing is available at /probe?target=&lt;device&gt;, metrics at <a href=\"/metrics\">/metrics</a></body>")); err != nil {
 			slog.Warn("Failed to write", "error", err)
 		}
 	})
+	http.Handle("/probe", probe.Handler(cfg))
 	http.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{
