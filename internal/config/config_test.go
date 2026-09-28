@@ -15,105 +15,108 @@ func TestConfig(t *testing.T) {
 	RunSpecs(t, "Config Suite")
 }
 
+func writeConfig(t GinkgoTInterface, yaml string) string {
+	tmpfile, err := os.CreateTemp("", "config*.yml")
+	Expect(err).NotTo(HaveOccurred())
+	_, err = tmpfile.Write([]byte(yaml))
+	Expect(err).NotTo(HaveOccurred())
+	Expect(tmpfile.Close()).To(Succeed())
+	t.Cleanup(func() { _ = os.Remove(tmpfile.Name()) })
+	return tmpfile.Name()
+}
+
 var _ = Describe("Config", func() {
-	Context("When loading a valid configuration", func() {
-		It("should parse the devices and set default values", func() {
-			yaml := `
-devices:
-  - name: "test-device"
-    address: "http://1.2.3.4"
-`
-			tmpfile, err := os.CreateTemp("", "config*.yml")
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = os.Remove(tmpfile.Name())
-			}()
-
-			_, err = tmpfile.Write([]byte(yaml))
-			Expect(err).NotTo(HaveOccurred())
-			_ = tmpfile.Close()
-
-			cfg, err := config.LoadConfig(tmpfile.Name())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg.Devices).To(HaveLen(1))
-			Expect(cfg.Devices[0].Name).To(Equal("test-device"))
-			Expect(cfg.Devices[0].Username).To(Equal("admin")) // Default value
-		})
-	})
-
-	Context("When validation fails", func() {
-		It("should return an error for missing required fields", func() {
-			yaml := `
-devices:
-  - name: "" # Required
-    address: "not-a-url"
-`
-			tmpfile, err := os.CreateTemp("", "config-fail*.yml")
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = os.Remove(tmpfile.Name())
-			}()
-
-			_, err = tmpfile.Write([]byte(yaml))
-			Expect(err).NotTo(HaveOccurred())
-			_ = tmpfile.Close()
-
-			_, err = config.LoadConfig(tmpfile.Name())
-			Expect(err).To(HaveOccurred())
-		})
-	})
-
-	Context("When using environment variable templates", func() {
-		It("should replace {{ env \"VAR\" }} with the environment variable value", func() {
-			err := os.Setenv("TEST_PASSWORD", "secret-password")
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = os.Unsetenv("TEST_PASSWORD")
-			}()
-
-			yaml := `
-devices:
-  - name: "test-device"
-    address: "http://1.2.3.4"
-    password: '{{ env "TEST_PASSWORD" }}'
-`
-			tmpfile, err := os.CreateTemp("", "config-env*.yml")
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = os.Remove(tmpfile.Name())
-			}()
-
-			_, err = tmpfile.Write([]byte(yaml))
-			Expect(err).NotTo(HaveOccurred())
-			_ = tmpfile.Close()
-
-			cfg, err := config.LoadConfig(tmpfile.Name())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg.Devices).To(HaveLen(1))
-			Expect(cfg.Devices[0].Password).To(Equal("secret-password"))
-		})
-
-		It("should support direct values without templating", func() {
-			yaml := `
-devices:
-  - name: "test-device"
-    address: "http://1.2.3.4"
+	It("parses modules and defaults the username", func() {
+		path := writeConfig(GinkgoT(), `
+modules:
+  auth:
     password: "direct-password"
-`
-			tmpfile, err := os.CreateTemp("", "config-direct*.yml")
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = os.Remove(tmpfile.Name())
-			}()
+`)
+		cfg, err := config.LoadConfig(path)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.Modules).To(HaveKey("auth"))
+		Expect(cfg.Modules["auth"].Username).To(Equal("admin"))
+		Expect(cfg.Modules["auth"].Password).To(Equal("direct-password"))
+	})
 
-			_, err = tmpfile.Write([]byte(yaml))
-			Expect(err).NotTo(HaveOccurred())
-			_ = tmpfile.Close()
+	It("returns the built-in default module when name is empty", func() {
+		path := writeConfig(GinkgoT(), `modules: {}`)
+		cfg, err := config.LoadConfig(path)
+		Expect(err).NotTo(HaveOccurred())
+		mod, ok := cfg.Module("")
+		Expect(ok).To(BeTrue())
+		Expect(mod.Username).To(Equal("admin"))
+	})
 
-			cfg, err := config.LoadConfig(tmpfile.Name())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg.Devices).To(HaveLen(1))
-			Expect(cfg.Devices[0].Password).To(Equal("direct-password"))
-		})
+	It("resolves an unknown module as not ok", func() {
+		path := writeConfig(GinkgoT(), `modules: {}`)
+		cfg, err := config.LoadConfig(path)
+		Expect(err).NotTo(HaveOccurred())
+		_, ok := cfg.Module("nope")
+		Expect(ok).To(BeFalse())
+	})
+
+	It("reads password_file and trims trailing whitespace", func() {
+		secret, err := os.CreateTemp("", "secret*.txt")
+		Expect(err).NotTo(HaveOccurred())
+		_, err = secret.WriteString("s3cret\n")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(secret.Close()).To(Succeed())
+		GinkgoT().Cleanup(func() { _ = os.Remove(secret.Name()) })
+
+		path := writeConfig(GinkgoT(), `
+modules:
+  auth:
+    password_file: `+secret.Name()+`
+`)
+		cfg, err := config.LoadConfig(path)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.Modules["auth"].Password).To(Equal("s3cret"))
+	})
+
+	It("errors on unreadable password_file", func() {
+		path := writeConfig(GinkgoT(), `
+modules:
+  auth:
+    password_file: /nonexistent/does-not-exist.txt
+`)
+		_, err := config.LoadConfig(path)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("auth"))
+	})
+
+	It("errors when password and password_file are both set", func() {
+		path := writeConfig(GinkgoT(), `
+modules:
+  auth:
+    password: "a"
+    password_file: /tmp/anything.txt
+`)
+		_, err := config.LoadConfig(path)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("expands env vars via the existing template", func() {
+		Expect(os.Setenv("TEST_PASSWORD", "secret-password")).To(Succeed())
+		GinkgoT().Cleanup(func() { _ = os.Unsetenv("TEST_PASSWORD") })
+
+		path := writeConfig(GinkgoT(), `
+modules:
+  auth:
+    password: '{{ env "TEST_PASSWORD" }}'
+`)
+		cfg, err := config.LoadConfig(path)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.Modules["auth"].Password).To(Equal("secret-password"))
+	})
+
+	It("rejects the old devices format (strict parsing)", func() {
+		path := writeConfig(GinkgoT(), `
+devices:
+  - name: "test-device"
+    address: "http://1.2.3.4"
+`)
+		_, err := config.LoadConfig(path)
+		Expect(err).To(HaveOccurred())
 	})
 })
