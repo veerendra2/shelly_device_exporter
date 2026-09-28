@@ -996,11 +996,13 @@ git commit -m "feat: mount /probe endpoint, exporter is now multi-target"
 
 ---
 
-### Task 6: Docs and compose example
+### Task 6: Docs, dashboards, and compose example
 
 **Files:**
 - Modify: `README.md`
 - Modify: `compose-dev.yml`
+- Modify: `assets/shelly-device-exporter-prometheus.json`
+- Modify: `assets/shelly-device-exporter-victoriametrics.json`
 
 **Interfaces:** none — documentation only.
 
@@ -1036,13 +1038,7 @@ configs:
 
 Replace the config-related sections with the following content, keeping the existing badges, features table, and metric list. Under "Deployment":
 
-1. Add a breaking-change callout directly above "Usage":
-
-```markdown
-> **⚠ Breaking change (v2):** The exporter follows the [multi-target pattern](https://prometheus.io/docs/guides/multi-target-exporter/). Devices are now configured in **prometheus.yml**, and exporter `config.yml` defines auth **modules** instead of a device list. See the migration example below.
-```
-
-2. Replace the current `config.yml` example with:
+1. Replace the current `config.yml` example with:
 
 ```yaml
 # config.yml — exporter configuration
@@ -1055,7 +1051,7 @@ modules:
   #   password: ${SHELLY_PASSWORD} # or password_file: /etc/secrets/shelly.txt
 ```
 
-3. Add the Prometheus config example (this exact block, with the `auth` module):
+2. Add the Prometheus config example (this exact block, with the `auth` module):
 
 ```yaml
 # prometheus.yml
@@ -1079,13 +1075,105 @@ scrape_configs:
         replacement: shelly-exporter:8080   # host:port where the exporter runs
 ```
 
-4. State that the device `name` label now comes from the device itself (set it in the Shelly app); one sentence.
+3. State that the device `name` label now comes from the device itself (set it in the Shelly app); one sentence.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Add a probe status panel to both dashboard JSONs**
+
+Both dashboards (`assets/shelly-device-exporter-prometheus.json` for Prometheus, `assets/shelly-device-exporter-victoriametrics.json` for VM) use the Grafana v2 `dashboard.grafana.app/v2` schema: panels live in `spec.elements` (keys `panel-1` … `panel-13`), wired into `spec.layout` via `ElementReference` items. The refactor adds `shelly_probe_success` and `shelly_probe_duration_seconds` (no labels; `instance` = device address), so add a "Device Status" panel that surfaces unreachable devices, which the old design never showed.
+
+In each JSON:
+
+1. In `spec.elements`, add a new element `panel-14`, mirroring the structure of the existing `panel-1` element but with these changes. For the Prometheus dashboard (`group: "prometheus"`):
+
+```json
+"panel-14": {
+ "kind": "Panel",
+ "spec": {
+  "id": 14,
+  "title": "Device Status",
+  "description": "1 = probe succeeded, 0 = device unreachable or failed",
+  "links": [],
+  "data": {
+   "kind": "QueryGroup",
+   "spec": {
+    "queries": [
+     {
+      "kind": "PanelQuery",
+      "spec": {
+       "query": {
+        "kind": "DataQuery",
+        "group": "prometheus",
+        "version": "v0",
+        "datasource": { "name": "${datasource}" },
+        "spec": {
+         "editorMode": "code",
+         "expr": "shelly_probe_success",
+         "legendFormat": "{{instance}}",
+         "range": true
+        }
+       },
+       "refId": "A",
+       "hidden": false
+      }
+     }
+    ],
+    "transformations": [],
+    "queryOptions": {}
+   }
+  },
+  "vizConfig": {
+   "kind": "VizConfig",
+   "group": "timeseries",
+   "version": "13.0.1",
+   "spec": {
+    "options": {
+     "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+     "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" }
+    },
+    "fieldConfig": {
+     "defaults": {
+      "unit": "short",
+      "min": 0,
+      "max": 1,
+      "thresholds": {
+       "mode": "absolute",
+       "steps": [
+        { "value": 0, "color": "red" },
+        { "value": 1, "color": "green" }
+       ]
+      },
+      "color": { "mode": "palette-classic" },
+      "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 2 }
+     },
+     "overrides": []
+    }
+   }
+  }
+ }
+}
+```
+
+Copy any remaining fields (`annotations`, `transitions`, etc.) verbatim from `panel-1` so the element matches the file's schema version exactly. For the VM dashboard, the same element with `"group": "victoriametrics-metrics-datasource"` and `"expr": "shelly_probe_success{job=~\"$job\"}"`.
+
+2. In `spec.layout`, add a `GridLayoutItem` at the start of the first row's `items` (shift nothing — the layout wraps; or place after the last item with `x`/`y` set to the next free slot):
+
+```json
+{
+ "kind": "GridLayoutItem",
+ "spec": {
+  "x": 0, "y": 0, "width": 12, "height": 4,
+  "element": { "kind": "ElementReference", "name": "panel-14" }
+ }
+}
+```
+
+3. Validate both files parse: `python3 -m json.tool assets/shelly-device-exporter-prometheus.json > /dev/null && python3 -m json.tool assets/shelly-device-exporter-victoriametrics.json > /dev/null`
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add README.md compose-dev.yml
-git commit -m "docs: multi-target configuration examples and migration note"
+git add README.md compose-dev.yml assets/shelly-device-exporter-prometheus.json assets/shelly-device-exporter-victoriametrics.json
+git commit -m "docs: multi-target config examples, device status dashboard panel"
 ```
 
 ---
