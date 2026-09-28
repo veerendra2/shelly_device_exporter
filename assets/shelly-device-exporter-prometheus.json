@@ -1690,7 +1690,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Power Stats",
+              "title": "Status",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -1708,7 +1708,21 @@
                           "name": "panel-14"
                         }
                       }
-                    },
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "Power Stats",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
                     {
                       "kind": "GridLayoutItem",
                       "spec": {

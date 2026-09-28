@@ -67,8 +67,10 @@ func main() {
 		Addr:              cli.Address,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       30 * time.Second,
+		// Must exceed the probe's 30s scrape-timeout cap, or slow devices get
+		// their connection killed before shelly_probe_success can report 0.
+		WriteTimeout: 35 * time.Second,
+		IdleTimeout:  30 * time.Second,
 	}
 
 	go func() {
