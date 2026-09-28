@@ -98,7 +98,7 @@ var _ = Describe("Probe handler", func() {
 		var sawAuth bool
 		authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if sawAuth {
-				w.Write([]byte(`{"sys":{"name":"plug-2"}}`))
+				_, _ = w.Write([]byte(`{"sys":{"name":"plug-2"}}`))
 				return
 			}
 			sawAuth = true

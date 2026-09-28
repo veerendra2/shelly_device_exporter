@@ -3,10 +3,10 @@ package collector_test
 import (
 	"testing"
 
-	dto "github.com/prometheus/client_model/go"
-	"github.com/prometheus/client_golang/prometheus"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/veerendra2/shelly_device_exporter/internal/collector"
 	"github.com/veerendra2/shelly_device_exporter/internal/shelly"
