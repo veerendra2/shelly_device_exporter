@@ -21,7 +21,7 @@
 
 | Feature                 | Description                                                                                                |
 | :---------------------- | :--------------------------------------------------------------------------------------------------------- |
-| Concurrent Scraping     | Dynamically-sized worker pool to fetch statuses from multiple devices simultaneously.                      |
+| Multi-Target            | Follows the [multi-target exporter pattern](https://prometheus.io/docs/guides/multi-target-exporter/): devices are configured in prometheus.yml, not in the exporter. |
 | Authentication          | Supports Shelly's required Digest Authentication out of the box.                                           |
 | Energy Cost Calculation | Automatically calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields. |
 
@@ -63,33 +63,30 @@ Flags:
 
 ### Configuration
 
-The exporter requires a configuration file to know which devices to poll and how to connect to them.
+The exporter config defines auth **modules** only. Devices live in `prometheus.yml`.
 
 ```yaml
----
-# (Optional) Used to calculate the 'shelly_device_energy_cost_total' metric.
-# Both fields must be set to enable cost calculation.
-price_per_kwh: 0.10
-currency: "EUR"
-
-# List of Shelly devices to monitor
-devices:
-  - name: "home-servers"
-    address: "http://SHELLY_DEVICE_IP"
-    username: "admin" # Optional, defaults to "admin"
-    password: "YOUR_PASSWORD"
+# config.yml — exporter configuration
+price_per_kwh: 0.32    # optional, enables cost metrics
+currency: EUR          # optional, label for cost metric
+modules:
+  # no module defined: /probe falls back to the built-in "default" (no auth)
+  # auth:
+  #   username: admin              # defaults to "admin"
+  #   password: ${SHELLY_PASSWORD} # or password_file: /etc/secrets/shelly.txt
 ```
+
+Set `password` or `password_file`, never both. The device `name` label comes from the device itself, so name your devices in the Shelly app.
 
 #### Environment Variable Templating
 
 The configuration file supports environment variable templating using the `{{ env "VAR" }}` syntax.
 
 ```yaml
-devices:
-  - name: "home-servers"
-    address: "http://192.168.0.6"
-    username: "admin"
-    password: '{{ env "SHELLY_DEVICE1_PASSWORD" }}'
+modules:
+  auth:
+    username: admin
+    password: '{{ env "SHELLY_PASSWORD" }}'
 ```
 
 ### Docker Compose
@@ -112,23 +109,34 @@ services:
 
 ### Prometheus Scrape Configuration
 
-Add the following to your `prometheus.yml` scrape configurations to collect metrics from the exporter:
+The exporter exposes `/probe?target=&lt;device&gt;&amp;module=&lt;name&gt;`. Prometheus relabeling passes each device as the `target`:
 
 ```yaml
 scrape_configs:
-  - job_name: "shelly_devices"
-    # Adjust scrape interval based on your needs
-    scrape_interval: 30s
-    scrape_timeout: 15s
+  - job_name: shelly
+    metrics_path: /probe
+    params:
+      module: [default]   # omit if your devices have no password
     static_configs:
-      - targets: ["shelly-device-exporter:8080"] # Replace with the exporter's address
+      - targets: ["192.168.1.100", "192.168.1.101"]
+      - targets: ["192.168.1.102"]
+        labels: { module: auth }   # targets needing credentials
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [module]
+        target_label: __param_module
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: shelly-device-exporter:8080   # host:port where the exporter runs
 ```
 
 ### Grafana Dashboard
 
 | Dashboard                                                                                                                                                                                     |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Grafana Dashboard Json (Prometheus Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-dashboard.json)            |
+| [Grafana Dashboard Json (Prometheus Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-prometheus.json)            |
 | [Grafana Dashboard Json (Victoriametrics Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-victoriametrics.json) |
 
 ![Dashboard Image](./assets/shelly-device-exporter-dashboard.png)

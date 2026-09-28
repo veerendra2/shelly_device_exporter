@@ -60,9 +60,19 @@ configs:
 
       scrape_configs:
         - job_name: shelly_device_exporter
+          metrics_path: /probe
+          params:
+            module: [default]
           static_configs:
             - targets:
-                - shellydeviceexporter:8080
+                - 192.168.1.100   # example: replace with your Shelly IPs
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: __param_target
+            - source_labels: [__param_target]
+              target_label: instance
+            - target_label: __address__
+              replacement: shellydeviceexporter:8080
 
   grafana-datasource:
     content: |
