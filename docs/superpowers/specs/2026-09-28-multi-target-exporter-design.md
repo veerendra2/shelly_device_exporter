@@ -22,13 +22,13 @@ Follow the multi-target pattern the way blackbox exporter does. Clean break: no 
 price_per_kwh: 0.32
 currency: EUR
 modules:
-  rack:
+  auth:
     username: admin
     password: ${SHELLY_RACK_PASSWORD}
 ```
 
 - `modules` replaces `devices`. A module holds `username`, `password`, and optionally `password_file`. `password` and `password_file` together is a config error.
-- `${ENV}` expansion applies to username, password, and password_file values (os.ExpandEnv).
+- `${ENV}`-style substitution applies to the whole file via the existing `{{ env "VAR" }}` Go template mechanism in `LoadConfig`; no new expansion code is needed.
 - `password_file` is read at startup; its contents are trimmed of trailing whitespace.
 - A built-in `default` module with no auth is used when the request has no `module` param. Users with one shared password define one named module; users with factory devices use the default.
 - The YAML is parsed strictly, so the old `devices:` format fails at startup with a clear error.
@@ -39,7 +39,7 @@ Example Prometheus config:
 - job_name: shelly
   metrics_path: /probe
   params:
-    module: [rack]
+    module: [auth]
   static_configs:
     - targets: [192.168.1.100, 192.168.1.101]
   relabel_configs:
