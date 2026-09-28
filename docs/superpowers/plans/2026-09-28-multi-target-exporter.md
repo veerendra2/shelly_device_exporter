@@ -1079,6 +1079,12 @@ scrape_configs:
 
 - [ ] **Step 4: Add a probe status panel to both dashboard JSONs**
 
+First rename the Prometheus dashboard file:
+
+```bash
+git mv assets/shelly-device-exporter-dashboard.json assets/shelly-device-exporter-prometheus.json
+```
+
 Both dashboards (`assets/shelly-device-exporter-prometheus.json` for Prometheus, `assets/shelly-device-exporter-victoriametrics.json` for VM) use the Grafana v2 `dashboard.grafana.app/v2` schema: panels live in `spec.elements` (keys `panel-1` … `panel-13`), wired into `spec.layout` via `ElementReference` items. The refactor adds `shelly_probe_success` and `shelly_probe_duration_seconds` (no labels; `instance` = device address), so add a "Device Status" panel that surfaces unreachable devices, which the old design never showed.
 
 In each JSON:
