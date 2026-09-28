@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/veerendra2/shelly_device_exporter/internal/config"
 	"github.com/veerendra2/shelly_device_exporter/internal/shelly"
 )
 
@@ -19,53 +18,38 @@ func TestShelly(t *testing.T) {
 }
 
 var _ = Describe("Shelly Client", func() {
-	var (
-		server *httptest.Server
-		client shelly.Client
-	)
-
-	BeforeEach(func() {
-		// Mock Shelly API
-		server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	It("fetches the status of one device", func() {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			Expect(r.URL.Path).To(Equal("/rpc/Shelly.GetStatus"))
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"sys":{"mac":"001122334455","uptime":100},"switch:0":{"apower":10.5}}`))
+			_, _ = w.Write([]byte(`{"sys":{"mac":"001122334455","name":"plug-1","uptime":100},"switch:0":{"apower":10.5}}`))
 		}))
+		defer server.Close()
 
-		cfg := config.Config{
-			Devices: []config.Device{
-				{Name: "test-1", Address: server.URL},
-				{Name: "test-2", Address: server.URL},
-			},
-		}
-		var err error
-		client, err = shelly.New(cfg)
+		client := shelly.New(server.URL, "", "")
+		status, err := client.Status(context.Background())
 		Expect(err).NotTo(HaveOccurred())
+		Expect(status.System.Name).To(Equal("plug-1"))
+		Expect(status.System.MAC).To(Equal("001122334455"))
+		Expect(status.Switch0.APower).NotTo(BeNil())
 	})
 
-	AfterEach(func() {
-		server.Close()
+	It("returns an error for an unreachable device", func() {
+		client := shelly.New("http://127.0.0.1:1", "", "")
+		_, err := client.Status(context.Background())
+		Expect(err).To(HaveOccurred())
 	})
 
-	Describe("BulkStatus", func() {
-		It("should fetch statuses from multiple devices concurrently", func() {
-			ctx := context.Background()
-			statuses := client.BulkStatus(ctx)
+	It("returns an error for a non-200 response", func() {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer server.Close()
 
-			Expect(statuses).To(HaveLen(2))
-			Expect(statuses[0].Name).To(Or(Equal("test-1"), Equal("test-2")))
-			Expect(statuses[0].System.MAC).To(Equal("001122334455"))
-		})
-
-		It("should respect context cancellation and prevent deadlock", func() {
-			// Create a context that is already cancelled
-			ctx, cancel := context.WithCancel(context.Background())
-			cancel()
-
-			statuses := client.BulkStatus(ctx)
-
-			// All should be filtered out because they contain errors
-			Expect(statuses).To(HaveLen(0))
-		})
+		client := shelly.New(server.URL, "", "")
+		_, err := client.Status(context.Background())
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("500"))
 	})
 })
