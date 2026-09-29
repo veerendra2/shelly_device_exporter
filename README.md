@@ -21,9 +21,9 @@
 
 | Feature                 | Description                                                                                                |
 | :---------------------- | :--------------------------------------------------------------------------------------------------------- |
-| Multi-Target            | Follows the [multi-target exporter pattern](https://prometheus.io/docs/guides/multi-target-exporter/): devices are configured in prometheus.yml, not in the exporter. |
+| Multi-Target            | Follows the [multi-target exporter pattern](https://prometheus.io/docs/guides/multi-target-exporter/): devices are configured in prometheus.yml. |
 | Authentication          | Supports Shelly's required Digest Authentication out of the box.                                           |
-| Energy Cost Calculation | Automatically calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields. |
+| Energy Cost Calculation | Calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields. |
 
 ## Device Compatibility
 
@@ -63,7 +63,7 @@ Flags:
 
 ### Configuration
 
-The exporter config defines auth **modules** only. Devices live in `prometheus.yml`.
+The exporter config defines auth modules only. Devices live in `prometheus.yml`.
 
 ```yaml
 # config.yml — exporter configuration
