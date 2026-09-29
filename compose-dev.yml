@@ -4,12 +4,13 @@ services:
   shellydeviceexporter:
     build: .
     container_name: shellydeviceexporter
-    volumes:
-      - ./config.yml:/config.yml
     environment:
       CONFIG_FILE: /config.yml
       LOG_LEVEL: debug
       SHELLY_PASSWORD: ${SHELLY_PASSWORD}
+    configs:
+      - source: exporter-config
+        target: /config.yml
     restart: unless-stopped
     labels:
       - com.centurylinklabs.watchtower.enable=true
@@ -57,6 +58,17 @@ services:
       - prometheus
 
 configs:
+  exporter-config:
+    content: |
+      # cost metrics (optional)
+      # price_per_kwh: 0.32
+      # currency: EUR
+      modules:
+        default: {}          # no auth
+        auth:
+          username: admin
+          password: '{{ env "SHELLY_PASSWORD" }}'
+
   prometheus-config:
     content: |
       global:
@@ -69,7 +81,10 @@ configs:
             module: [default]
           static_configs:
             - targets:
-                - 192.168.1.100   # example: replace with your Shelly IPs
+                - ${SHELLY_DEVICE_ADDR}
+            # targets needing credentials (uses the "auth" module above):
+            # - targets: ["192.168.1.101"]
+            #   labels: { module: auth }
           relabel_configs:
             - source_labels: [__address__]
               target_label: __param_target
