@@ -73,7 +73,7 @@ modules:
   # no module defined: /probe falls back to the built-in "default" (no auth)
   # auth:
   #   username: admin              # defaults to "admin"
-  #   password: ${SHELLY_PASSWORD} # or password_file: /etc/secrets/shelly.txt
+  #   password: {{ env "SHELLY_PASSWORD" }} # or password_file: /etc/secrets/shelly.txt
 ```
 
 Set `password` or `password_file`, never both. The device `name` label comes from the device itself, so name your devices in the Shelly app.

@@ -1048,7 +1048,7 @@ modules:
   # no module defined: /probe falls back to the built-in "default" (no auth)
   # auth:
   #   username: admin              # defaults to "admin"
-  #   password: ${SHELLY_PASSWORD} # or password_file: /etc/secrets/shelly.txt
+  #   password: {{ env "SHELLY_PASSWORD" }} # or password_file: /etc/secrets/shelly.txt
 ```
 
 2. Add the Prometheus config example (this exact block, with the `auth` module):

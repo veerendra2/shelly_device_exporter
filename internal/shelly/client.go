@@ -14,13 +14,26 @@ import (
 	"github.com/icholy/digest"
 )
 
-const statusPath = "/rpc/Shelly.GetStatus"
+const (
+	statusPath = "/rpc/Shelly.GetStatus"
+	configPath = "/rpc/Shelly.GetConfig"
+)
 
 // This exporter currently supports only the components below,
 // so the response is unmarshaled into these objects only.
 type StatusResponse struct {
 	System  *SystemStatus `json:"sys"`
 	Switch0 *SwitchStatus `json:"switch:0"`
+}
+
+// The device name is not part of GetStatus; it lives in GetConfig
+// under sys.device.name (see Shelly Gen2 API docs).
+type ConfigResponse struct {
+	System struct {
+		Device struct {
+			Name string `json:"name"`
+		} `json:"device"`
+	} `json:"sys"`
 }
 
 // Client scrapes a single Shelly device. One client exists per probe request.
@@ -36,12 +49,12 @@ func New(address, username, password string) Client {
 
 // The timeout comes from the caller's context (the probe handler derives it
 // from the Prometheus scrape-timeout header), so the http.Client sets none.
-func (c *Client) Status(ctx context.Context) (*StatusResponse, error) {
+func (c *Client) get(ctx context.Context, rpcPath string) ([]byte, error) {
 	requestUrl, err := url.Parse(c.address)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device address %q: %w", c.address, err)
 	}
-	requestUrl.Path = path.Join(requestUrl.Path, statusPath)
+	requestUrl.Path = path.Join(requestUrl.Path, rpcPath)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUrl.String(), nil)
 	if err != nil {
@@ -80,6 +93,14 @@ func (c *Client) Status(ctx context.Context) (*StatusResponse, error) {
 	}
 
 	slog.Debug("Raw Shelly API response", "device", requestUrl.Host, "json", string(body))
+	return body, nil
+}
+
+func (c *Client) Status(ctx context.Context) (*StatusResponse, error) {
+	body, err := c.get(ctx, statusPath)
+	if err != nil {
+		return nil, err
+	}
 
 	var status StatusResponse
 	if err := json.Unmarshal(body, &status); err != nil {
@@ -87,4 +108,21 @@ func (c *Client) Status(ctx context.Context) (*StatusResponse, error) {
 	}
 
 	return &status, nil
+}
+
+// Name fetches the device name from Shelly.GetConfig. Best effort: the probe
+// falls back to the target address when this fails, so errors are logged only.
+func (c *Client) Name(ctx context.Context) string {
+	body, err := c.get(ctx, configPath)
+	if err != nil {
+		slog.Warn("Failed to fetch device name", "device_address", c.address, "error", err)
+		return ""
+	}
+
+	var cfg ConfigResponse
+	if err := json.Unmarshal(body, &cfg); err != nil {
+		slog.Warn("Failed to parse device config", "device_address", c.address, "error", err)
+		return ""
+	}
+	return cfg.System.Device.Name
 }

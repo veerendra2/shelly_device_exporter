@@ -26,11 +26,16 @@ var _ = Describe("Probe handler", func() {
 	)
 
 	BeforeEach(func() {
-		// Mock Shelly device.
+		// Mock Shelly device: GetStatus for metrics, GetConfig for the name.
 		shellyServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"sys":{"mac":"0011","name":"plug-1","uptime":10},"switch:0":{"apower":10.5,"aenergy":{"total":5000}}}`))
+			switch r.URL.Path {
+			case "/rpc/Shelly.GetConfig":
+				_, _ = w.Write([]byte(`{"sys":{"device":{"name":"plug-1"}}}`))
+			default:
+				_, _ = w.Write([]byte(`{"sys":{"mac":"0011","uptime":10},"switch:0":{"apower":10.5,"aenergy":{"total":5000}}}`))
+			}
 		}))
 		DeferCleanup(shellyServer.Close)
 
@@ -71,6 +76,20 @@ var _ = Describe("Probe handler", func() {
 		Expect(body).To(ContainSubstring(`shelly_probe_success 0`))
 	})
 
+	It("falls back to the bare target address when the device has no name", func() {
+		unnamed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"sys":{"mac":"0011"}}`))
+		}))
+		DeferCleanup(unnamed.Close)
+
+		code, body := doProbe(strings.TrimPrefix(unnamed.URL, "http://"), "")
+		Expect(code).To(Equal(200))
+		// no scheme in the fallback name, matching the instance label
+		Expect(body).To(ContainSubstring(`{name="` + strings.TrimPrefix(unnamed.URL, "http://") + `"}`))
+	})
+
 	It("returns 400 for a missing target", func() {
 		code, _ := doProbe("", "")
 		Expect(code).To(Equal(400))
@@ -98,7 +117,7 @@ var _ = Describe("Probe handler", func() {
 		var sawAuth bool
 		authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if sawAuth {
-				_, _ = w.Write([]byte(`{"sys":{"name":"plug-2"}}`))
+				_, _ = w.Write([]byte(`{"sys":{"device":{"name":"plug-2"}}}`))
 				return
 			}
 			sawAuth = true

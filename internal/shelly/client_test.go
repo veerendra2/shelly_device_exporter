@@ -23,16 +23,32 @@ var _ = Describe("Shelly Client", func() {
 			Expect(r.URL.Path).To(Equal("/rpc/Shelly.GetStatus"))
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"sys":{"mac":"001122334455","name":"plug-1","uptime":100},"switch:0":{"apower":10.5}}`))
+			_, _ = w.Write([]byte(`{"sys":{"mac":"001122334455","uptime":100},"switch:0":{"apower":10.5}}`))
 		}))
 		defer server.Close()
 
 		client := shelly.New(server.URL, "", "")
 		status, err := client.Status(context.Background())
 		Expect(err).NotTo(HaveOccurred())
-		Expect(status.System.Name).To(Equal("plug-1"))
 		Expect(status.System.MAC).To(Equal("001122334455"))
 		Expect(status.Switch0.APower).NotTo(BeNil())
+	})
+
+	It("fetches the device name from GetConfig", func() {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			Expect(r.URL.Path).To(Equal("/rpc/Shelly.GetConfig"))
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"sys":{"device":{"name":"plug-1"}}}`))
+		}))
+		defer server.Close()
+
+		client := shelly.New(server.URL, "", "")
+		Expect(client.Name(context.Background())).To(Equal("plug-1"))
+	})
+
+	It("returns an empty name when GetConfig fails", func() {
+		client := shelly.New("http://127.0.0.1:1", "", "")
+		Expect(client.Name(context.Background())).To(Equal(""))
 	})
 
 	It("returns an error for an unreachable device", func() {

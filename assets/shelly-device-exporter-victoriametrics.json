@@ -1972,14 +1972,14 @@
             },
             "spec": {
               "qryType": 1,
-              "query": "label_values(shelly_device_apower_watts,job)",
+              "query": "label_values(shelly_probe_success,job)",
               "refId": "VariableQueryEditor-VariableQuery"
             }
           },
           "regex": "",
           "regexApplyTo": "value",
           "sort": "alphabeticalAsc",
-          "definition": "label_values(shelly_device_apower_watts,job)",
+          "definition": "label_values(shelly_probe_success,job)",
           "options": [],
           "multi": false,
           "includeAll": false,

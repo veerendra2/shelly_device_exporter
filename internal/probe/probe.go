@@ -3,6 +3,7 @@ package probe
 import (
 	"context"
 	"log/slog"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -57,11 +58,12 @@ func (p *probeCollector) Collect(ch chan<- prometheus.Metric) {
 // shelly_probe_success reports the outcome (blackbox convention).
 func Handler(cfg *config.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		target := strings.TrimSpace(r.URL.Query().Get("target"))
-		if target == "" {
+		bare := strings.TrimSpace(r.URL.Query().Get("target"))
+		if bare == "" {
 			http.Error(w, "missing target parameter", http.StatusBadRequest)
 			return
 		}
+		target := bare
 		if !strings.Contains(target, "://") {
 			target = "http://" + target
 		}
@@ -73,7 +75,11 @@ func Handler(cfg *config.Config) http.Handler {
 		}
 
 		shellyClient := shelly.New(target, module.Username, module.Password)
-		ctx, cancel := context.WithTimeout(r.Context(), scrapeTimeout(r))
+		// Leave a margin between the device deadline and the Prometheus scrape
+		// timeout, so the response (with shelly_probe_success on it) still gets
+		// written before the scrape itself is cancelled.
+		timeout := max(scrapeTimeout(r)-time.Second, 0)
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 
 		start := time.Now()
@@ -85,10 +91,11 @@ func Handler(cfg *config.Config) http.Handler {
 		}
 
 		registry := prometheus.NewRegistry()
-		// name label comes from the device itself; fall back to the target address.
-		name := target
-		if status != nil && status.System != nil && status.System.Name != "" {
-			name = status.System.Name
+		// name label comes from the device (GetConfig, best effort);
+		// fall back to the bare target address.
+		name := bare
+		if deviceName := shellyClient.Name(ctx); deviceName != "" {
+			name = deviceName
 		}
 		if status != nil {
 			registry.MustRegister(collector.New(status, name, cfg.PricePerKWh, cfg.Currency))
@@ -107,8 +114,10 @@ func scrapeTimeout(r *http.Request) time.Duration {
 		return maxTimeout
 	}
 	seconds, err := strconv.ParseFloat(h, 64)
-	if err != nil || seconds <= 0 {
+	// NaN and huge values overflow the duration conversion into negative
+	// territory, so clamp in float space first.
+	if err != nil || seconds <= 0 || math.IsNaN(seconds) {
 		return maxTimeout
 	}
-	return min(time.Duration(seconds*float64(time.Second)), maxTimeout)
+	return min(time.Duration(min(seconds, maxTimeout.Seconds())*float64(time.Second)), maxTimeout)
 }

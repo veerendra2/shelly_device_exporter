@@ -5,7 +5,6 @@ package shelly
 // Source: https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Sys/#status
 type SystemStatus struct {
 	MAC              string        `json:"mac"`
-	Name             string        `json:"name"`
 	RestartRequired  bool          `json:"restart_required"`
 	Time             *string       `json:"time"`
 	Unixtime         *float64      `json:"unixtime"`

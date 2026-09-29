@@ -24,7 +24,7 @@ currency: EUR
 modules:
   auth:
     username: admin
-    password: ${SHELLY_RACK_PASSWORD}
+    password: {{ env "SHELLY_RACK_PASSWORD" }}
 ```
 
 - `modules` replaces `devices`. A module holds `username`, `password`, and optionally `password_file`. `password` and `password_file` together is a config error.
