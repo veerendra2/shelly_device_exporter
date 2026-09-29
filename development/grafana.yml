@@ -1,0 +1,18 @@
+# Grafana provisioning: works in both the datasources and dashboards
+# directories (Grafana reads only the section it needs from each file).
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+
+providers:
+  - name: shelly
+    orgId: 1
+    folder: Shelly
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

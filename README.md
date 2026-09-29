@@ -19,11 +19,11 @@
 
 ## Features
 
-| Feature                 | Description                                                                                                |
-| :---------------------- | :--------------------------------------------------------------------------------------------------------- |
+| Feature                 | Description                                                                                                                                      |
+| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Multi-Target            | Follows the [multi-target exporter pattern](https://prometheus.io/docs/guides/multi-target-exporter/): devices are configured in prometheus.yml. |
-| Authentication          | Supports Shelly's required Digest Authentication out of the box.                                           |
-| Energy Cost Calculation | Calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields. |
+| Authentication          | Supports Shelly's required Digest Authentication out of the box.                                                                                 |
+| Energy Cost Calculation | Calculates ongoing energy costs based on configurable `price_per_kwh` and `currency` fields.                                                     |
 
 ## Device Compatibility
 
@@ -35,7 +35,8 @@ _Compatible with all Gen 2+ devices utilizing the standard Shelly RPC API._
 
 ## Exported Metrics
 
-_See list of [Metrics](https://github.com/veerendra2/shelly_device_exporter/wiki/Metrics)_
+_See list of
+[Metrics](https://github.com/veerendra2/shelly_device_exporter/wiki/Metrics)_
 
 | Component                                                                        | Status |
 | -------------------------------------------------------------------------------- | ------ |
@@ -67,8 +68,8 @@ The exporter config defines auth modules only. Devices live in `prometheus.yml`.
 
 ```yaml
 # config.yml — exporter configuration
-price_per_kwh: 0.32    # optional, enables cost metrics
-currency: EUR          # optional, label for cost metric
+price_per_kwh: 0.32 # optional, enables cost metrics
+currency: EUR # optional, label for cost metric
 modules:
   # no module defined: /probe falls back to the built-in "default" (no auth)
   # auth:
@@ -76,11 +77,13 @@ modules:
   #   password: {{ env "SHELLY_PASSWORD" }} # or password_file: /etc/secrets/shelly.txt
 ```
 
-Set `password` or `password_file`, never both. The device `name` label comes from the device itself, so name your devices in the Shelly app.
+Set `password` or `password_file`, never both. The device `name` label comes
+from the device itself, so name your devices in the Shelly app.
 
 #### Environment Variable Templating
 
-The configuration file supports environment variable templating using the `{{ env "VAR" }}` syntax.
+The configuration file supports environment variable templating using the
+`{{ env "VAR" }}` syntax.
 
 ```yaml
 modules:
@@ -109,18 +112,19 @@ services:
 
 ### Prometheus Scrape Configuration
 
-The exporter exposes `/probe?target=&lt;device&gt;&amp;module=&lt;name&gt;`. Prometheus relabeling passes each device as the `target`:
+The exporter exposes `/probe?target=&lt;device&gt;&amp;module=&lt;name&gt;`.
+Prometheus relabeling passes each device as the `target`:
 
 ```yaml
 scrape_configs:
   - job_name: shelly
     metrics_path: /probe
     params:
-      module: [default]   # omit if your devices have no password
+      module: [default] # omit if your devices have no password
     static_configs:
       - targets: ["192.168.1.100", "192.168.1.101"]
       - targets: ["192.168.1.102"]
-        labels: { module: auth }   # targets needing credentials
+        labels: { module: auth } # targets needing credentials
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -129,14 +133,14 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: shelly-device-exporter:8080   # host:port where the exporter runs
+        replacement: shelly-device-exporter:8080 # host:port where the exporter runs
 ```
 
 ### Grafana Dashboard
 
 | Dashboard                                                                                                                                                                                     |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Grafana Dashboard Json (Prometheus Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-prometheus.json)            |
+| --- |
+| [Grafana Dashboard Json (Prometheus Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-prometheus.json)           |
 | [Grafana Dashboard Json (Victoriametrics Datasource)](https://raw.githubusercontent.com/veerendra2/shelly_device_exporter/refs/heads/main/assets/shelly-device-exporter-victoriametrics.json) |
 
 ![Dashboard Image](./assets/shelly-device-exporter-dashboard.png)
@@ -175,16 +179,4 @@ _Install GoReleaser: [Installation Guide](https://goreleaser.com/install/)_
 goreleaser release --snapshot --clean
 ```
 
-### Shelly API Reference
 
-- [Authentication](https://shelly-api-docs.shelly.cloud/gen2/General/Authentication/)
-
-For debugging purposes, you can directly access your Shelly devices via curl:
-
-```bash
-# Get device info
-curl 'http://YOUR_SHELLY_IP/shelly'
-
-# Get device status using Digest Auth
-curl --digest -u admin:"YOUR_PASSWORD" 'http://YOUR_SHELLY_IP/rpc/Shelly.GetStatus'
-```

@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 30s
+
+scrape_configs:
+  - job_name: shelly_device_exporter
+    metrics_path: /probe
+    params:
+      module: [default]
+    static_configs:
+      - targets:
+          - 192.168.1.100           # replace with your Shelly IP (file binds don't expand env vars)
+        labels:
+          module: auth
+      # targets needing no credentials can use the "default" module instead
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: shellydeviceexporter:8080
