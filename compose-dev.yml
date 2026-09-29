@@ -44,9 +44,13 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./assets/shelly-device-exporter-prometheus.json:/var/lib/grafana/dashboards/shelly-device-exporter-prometheus.json
+      - ./assets/shelly-device-exporter-victoriametrics.json:/var/lib/grafana/dashboards/shelly-device-exporter-victoriametrics.json
     configs:
       - source: grafana-datasource
         target: /etc/grafana/provisioning/datasources/prometheus.yml
+      - source: grafana-dashboards
+        target: /etc/grafana/provisioning/dashboards/dashboards.yml
     ports:
       - 3000:3000
     depends_on:
@@ -83,6 +87,17 @@ configs:
           access: proxy
           url: http://prometheus:9090
           isDefault: true
+
+  grafana-dashboards:
+    content: |
+      apiVersion: 1
+      providers:
+        - name: shelly
+          orgId: 1
+          folder: Shelly
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards
 
 volumes:
   grafana_data:
