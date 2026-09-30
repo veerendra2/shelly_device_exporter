@@ -5,14 +5,11 @@ services:
   grafana1:
     image: grafana/grafana:latest
     container_name: grafana1
-    depends_on:
-      - prometheus
     volumes:
       - grafana_data:/var/lib/grafana
       - ../assets/shelly-device-exporter-prometheus.json:/var/lib/grafana/dashboards/shelly-device-exporter-prometheus.json
-      - ../assets/shelly-device-exporter-victoriametrics.json:/var/lib/grafana/dashboards/shelly-device-exporter-victoriametrics.json
-      - ./grafana.yml:/etc/grafana/provisioning/datasources/grafana.yml
-      - ./grafana.yml:/etc/grafana/provisioning/dashboards/grafana.yml
+      - ./dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -26,8 +23,6 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    depends_on:
-      - shellydeviceexporter
     volumes:
       - prometheus_data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
@@ -39,9 +34,9 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=7d
 
-  shellydeviceexporter:
-    build: .
-    container_name: shellydeviceexporter
+  shelly-device-exporter:
+    build:
+      context: ..
     volumes:
       - ./shelly.yml:/config.yml
     environment:
@@ -51,9 +46,8 @@ services:
     networks:
       - prometheus_network
     restart: unless-stopped
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
-      - traefik.enable=false
+    ports:
+      - 8081:8080
     hostname: shellydeviceexporter
 
 networks:

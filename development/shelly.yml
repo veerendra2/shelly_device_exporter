@@ -1,9 +1,8 @@
-# Exporter configuration (mounted at /config.yml).
-# Set SHELLY_PASSWORD in your environment for the auth module.
-price_per_kwh: 0.32
+---
+price_per_kwh: 0.3362
 currency: EUR
 modules:
-  default: {}          # no auth
+  default: {}
   auth:
     username: admin
     password: '{{ env "SHELLY_PASSWORD" }}'

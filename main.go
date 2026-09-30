@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -73,8 +74,16 @@ func main() {
 		IdleTimeout:  30 * time.Second,
 	}
 
+	// Bind up front so a busy port (or a bad address) exits instead of
+	// leaving the process running without a server.
+	listener, err := net.Listen("tcp", cli.Address)
+	if err != nil {
+		slog.Error("Failed to listen", "address", cli.Address, "error", err)
+		os.Exit(1)
+	}
+
 	go func() {
-		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Server died unexpected.", slog.Any("error", err))
 		}
 		slog.Error("Server stopped.")

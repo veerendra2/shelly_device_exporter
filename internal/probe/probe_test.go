@@ -26,16 +26,15 @@ var _ = Describe("Probe handler", func() {
 	)
 
 	BeforeEach(func() {
-		// Mock Shelly device: GetStatus for metrics, GetConfig for the name.
+		// Mock Shelly device: GetStatus only — the exporter must not ask for
+		// anything else, so an unexpected path fails the probe response.
 		shellyServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/rpc/Shelly.GetStatus" {
+				Fail("unexpected device request: " + r.URL.Path)
+			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			switch r.URL.Path {
-			case "/rpc/Shelly.GetConfig":
-				_, _ = w.Write([]byte(`{"sys":{"device":{"name":"plug-1"}}}`))
-			default:
-				_, _ = w.Write([]byte(`{"sys":{"mac":"0011","uptime":10},"switch:0":{"apower":10.5,"aenergy":{"total":5000}}}`))
-			}
+			_, _ = w.Write([]byte(`{"sys":{"mac":"0011","uptime":10},"switch:0":{"apower":10.5,"aenergy":{"total":5000}}}`))
 		}))
 		DeferCleanup(shellyServer.Close)
 
@@ -65,7 +64,10 @@ var _ = Describe("Probe handler", func() {
 		code, body := doProbe(addr, "")
 		Expect(code).To(Equal(200))
 		Expect(body).To(ContainSubstring(`shelly_probe_success 1`))
-		Expect(body).To(ContainSubstring(`shelly_device_apower_watts{name="plug-1"} 10.5`))
+		Expect(body).To(ContainSubstring(`shelly_device_apower_watts 10.5`))
+		// the exporter emits no name label; Prometheus attaches one from
+		// static_configs labels, so the metric must stay unlabeled here.
+		Expect(body).NotTo(ContainSubstring(`name="`))
 		// price is unset in this config, so no cost metric
 		Expect(body).NotTo(ContainSubstring("aenergy_cost_total"))
 	})
@@ -74,20 +76,6 @@ var _ = Describe("Probe handler", func() {
 		code, body := doProbe("127.0.0.1:1", "")
 		Expect(code).To(Equal(200))
 		Expect(body).To(ContainSubstring(`shelly_probe_success 0`))
-	})
-
-	It("falls back to the bare target address when the device has no name", func() {
-		unnamed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"sys":{"mac":"0011"}}`))
-		}))
-		DeferCleanup(unnamed.Close)
-
-		code, body := doProbe(strings.TrimPrefix(unnamed.URL, "http://"), "")
-		Expect(code).To(Equal(200))
-		// no scheme in the fallback name, matching the instance label
-		Expect(body).To(ContainSubstring(`{name="` + strings.TrimPrefix(unnamed.URL, "http://") + `"}`))
 	})
 
 	It("returns 400 for a missing target", func() {
@@ -117,7 +105,7 @@ var _ = Describe("Probe handler", func() {
 		var sawAuth bool
 		authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if sawAuth {
-				_, _ = w.Write([]byte(`{"sys":{"device":{"name":"plug-2"}}}`))
+				_, _ = w.Write([]byte(`{"sys":{"mac":"0022"}}`))
 				return
 			}
 			sawAuth = true

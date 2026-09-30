@@ -33,6 +33,18 @@ tasks:
       LOG_FORMAT: console
       LOG_ADD_SOURCE: false
       LOG_LEVEL: debug
+      CONFIG_FILE: development/shelly.yml
+      ADDRESS: ":8081"
+
+  fmt:
+    desc: "Formats all Go source files"
+    cmds:
+      - go fmt ./...
+
+  fix:
+    desc: "Updates Go source code to use current APIs and idioms"
+    cmds:
+      - go fix ./...
 
   lint:
     desc: "Run static analysis and code linting using golangci-lint"
@@ -40,11 +52,6 @@ tasks:
       - install
     cmds:
       - golangci-lint run --timeout 3m
-
-  fmt:
-    desc: "Formats all Go source files"
-    cmds:
-      - go fmt ./...
 
   vet:
     desc: "Examines Go source code and reports suspicious constructs"
@@ -94,7 +101,7 @@ tasks:
   build-docker:
     desc: "Build Docker image"
     cmds:
-      - docker build -t {{.APP_NAME}} .
+      - docker build -t {{.APP_NAME}} ./development
 
   security:
     desc: "Run security vulnerability scan"
@@ -116,6 +123,7 @@ tasks:
     desc: "Run comprehensive checks: format, lint, security and test"
     cmds:
       - task fmt
+      - task fix
       - task lint
       - task vet
       - task security

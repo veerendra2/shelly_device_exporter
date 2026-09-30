@@ -91,14 +91,8 @@ func Handler(cfg *config.Config) http.Handler {
 		}
 
 		registry := prometheus.NewRegistry()
-		// name label comes from the device (GetConfig, best effort);
-		// fall back to the bare target address.
-		name := bare
-		if deviceName := shellyClient.Name(ctx); deviceName != "" {
-			name = deviceName
-		}
 		if status != nil {
-			registry.MustRegister(collector.New(status, name, cfg.PricePerKWh, cfg.Currency))
+			registry.MustRegister(collector.New(status, cfg.PricePerKWh, cfg.Currency))
 		}
 		registry.MustRegister(&probeCollector{success: err == nil, duration: duration})
 

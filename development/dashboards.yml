@@ -1,0 +1,10 @@
+---
+apiVersion: 1
+
+providers:
+  - name: shelly
+    orgId: 1
+    folder: Shelly
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
