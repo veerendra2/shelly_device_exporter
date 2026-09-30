@@ -1,4 +1,4 @@
-package probe_test
+package probe
 
 import (
 	"fmt"
@@ -7,12 +7,12 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/veerendra2/shelly_device_exporter/internal/config"
-	"github.com/veerendra2/shelly_device_exporter/internal/probe"
 )
 
 func TestProbe(t *testing.T) {
@@ -44,7 +44,7 @@ var _ = Describe("Probe handler", func() {
 				"auth": {Username: "admin", Password: "pw"},
 			},
 		}
-		exporter = httptest.NewServer(probe.Handler(cfg))
+		exporter = httptest.NewServer(Handler(cfg))
 		DeferCleanup(exporter.Close)
 	})
 
@@ -131,7 +131,7 @@ var _ = Describe("Probe handler", func() {
 		cfg := &config.Config{Modules: map[string]config.Module{
 			"auth": {Username: "admin", Password: "pw"},
 		}}
-		exporter2 := httptest.NewServer(probe.Handler(cfg))
+		exporter2 := httptest.NewServer(Handler(cfg))
 		DeferCleanup(exporter2.Close)
 
 		addr := strings.TrimPrefix(authServer.URL, "http://")
@@ -143,3 +143,14 @@ var _ = Describe("Probe handler", func() {
 		Expect(string(body)).To(ContainSubstring(`shelly_device_sys_mac_info`))
 	})
 })
+
+func TestProbeTimeoutKeepsShortScrapesUsable(t *testing.T) {
+	req := httptest.NewRequest("GET", "/probe", nil)
+	req.Header.Set(scrapeTimeoutHeader, "0.5")
+
+	got := probeTimeout(req)
+	want := 450 * time.Millisecond
+	if got != want {
+		t.Fatalf("probeTimeout() = %v, want %v", got, want)
+	}
+}

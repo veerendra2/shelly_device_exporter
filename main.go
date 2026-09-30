@@ -57,7 +57,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if _, err = w.Write([]byte("<body>Probing is available at /probe?target=&lt;device&gt;, metrics at <a href=\"/metrics\">/metrics</a></body>")); err != nil {
+		if _, err := w.Write([]byte("<body>Probing is available at /probe?target=&lt;device&gt;, metrics at <a href=\"/metrics\">/metrics</a></body>")); err != nil {
 			slog.Warn("Failed to write", "error", err)
 		}
 	})
@@ -101,7 +101,7 @@ func main() {
 	<-done
 	slog.Info("Shutdown started.")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {

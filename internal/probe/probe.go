@@ -76,10 +76,7 @@ func Handler(cfg *config.Config) http.Handler {
 		}
 
 		shellyClient := shelly.New(target, module.Username, module.Password)
-		// Leave a margin between the device deadline and the Prometheus scrape
-		// timeout, so the response (with shelly_probe_success on it) still gets
-		// written before the scrape itself is cancelled.
-		timeout := max(scrapeTimeout(r)-time.Second, 0)
+		timeout := probeTimeout(r)
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 
@@ -115,4 +112,10 @@ func scrapeTimeout(r *http.Request) time.Duration {
 		return maxTimeout
 	}
 	return min(time.Duration(min(seconds, maxTimeout.Seconds())*float64(time.Second)), maxTimeout)
+}
+
+func probeTimeout(r *http.Request) time.Duration {
+	timeout := scrapeTimeout(r)
+	margin := min(time.Second, timeout/10)
+	return max(timeout-margin, time.Nanosecond)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -41,7 +42,7 @@ var _ = Describe("Shelly Client", func() {
 	})
 
 	It("returns an error for a non-200 response", func() {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
 		defer server.Close()
@@ -50,5 +51,18 @@ var _ = Describe("Shelly Client", func() {
 		_, err := client.Status(context.Background())
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("500"))
+	})
+
+	It("returns an error for an oversized response", func() {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(strings.Repeat("x", 1<<20+1)))
+		}))
+		defer server.Close()
+
+		client := shelly.New(server.URL, "", "")
+		_, err := client.Status(context.Background())
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("response too large"))
 	})
 })

@@ -14,7 +14,10 @@ import (
 	"github.com/icholy/digest"
 )
 
-const statusPath = "/rpc/Shelly.GetStatus"
+const (
+	statusPath           = "/rpc/Shelly.GetStatus"
+	maxResponseBodyBytes = 1 << 20
+)
 
 // This exporter currently supports only the components below,
 // so the response is unmarshaled into these objects only.
@@ -74,9 +77,12 @@ func (c *Client) get(ctx context.Context, rpcPath string) ([]byte, error) {
 		return nil, fmt.Errorf("shelly request failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodyBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	if len(body) > maxResponseBodyBytes {
+		return nil, fmt.Errorf("device response too large: over %d bytes", maxResponseBodyBytes)
 	}
 
 	slog.Debug("Raw Shelly API response", "device", requestUrl.Host, "json", string(body))
