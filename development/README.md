@@ -8,8 +8,6 @@ Set your device credentials:
 export SHELLY_PASSWORD=your-password
 ```
 
-Set your device IP in `prometheus.yml`.
-
 To start only shelly-device-exporter:
 
 ```bash
@@ -19,7 +17,7 @@ docker compose up shelly-device-exporter -d --build
 To start full stack:
 
 ```bash
-docker compose up -d --build
+docker compose -f up -d --build
 ```
 
 Endpoints:

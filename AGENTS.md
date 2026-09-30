@@ -54,8 +54,8 @@ Request flow (`main.go` → `internal/`):
    digest auth via `github.com/icholy/digest`.
 4. `internal/collector` — stateless formatter: converts a pre-fetched
    `*shelly.StatusResponse` into metrics. Cost is computed in-collector as
-   `(aenergy_total Wh / 1000) × price_per_kwh`. Metrics are registered under
-   the `shelly_device_` prefix; names are stable.
+   `(aenergy_total Wh / 1000) × price_per_kwh`. Metrics are registered under the
+   `shelly_device_` prefix; names are stable.
 
 Key invariants when changing this code:
 
@@ -63,14 +63,14 @@ Key invariants when changing this code:
   `shelly_probe_success 0` never reaches Prometheus for slow devices.
 - **Keep `/probe` side-effect free and per-request**: nothing global except
   loaded config; `collector.Exporter` is constructed fresh each probe.
-- **`shelly_probe_success`**: keep 200-on-device-failure semantics; Prometheus
-  alerts and the dashboards key on it.
+- **`shelly_probe_success`**: keep 200-on-device-failure semantics and its
+  fallback `name` label; Prometheus alerts and the dashboards key on it.
 - **Dashboards** (`assets/*.json`, Grafana schema v2, Prometheus +
   VictoriaMetrics variants) label everything by `name`; renaming metrics or
   changing the `name`/`currency` labels is a breaking change for both.
-- The exporter emits no `name` label. Prometheus supplies it from
-  `static_configs` labels — do not reintroduce a device name lookup
-  (`Shelly.GetConfig`) without a reason; it costs an extra request per probe.
+- The exporter uses the probe target as the fallback `name` label. Prometheus
+  users can override it with a `name` label in `static_configs`. Do not add a
+  device name lookup (`Shelly.GetConfig`); it costs an extra request per probe.
 
 ## Local development
 

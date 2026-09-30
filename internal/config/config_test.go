@@ -59,7 +59,7 @@ modules:
 	It("reads password_file and trims trailing whitespace", func() {
 		secret, err := os.CreateTemp("", "secret*.txt")
 		Expect(err).NotTo(HaveOccurred())
-		_, err = secret.WriteString("s3cret\n")
+		_, err = secret.WriteString("s3cret \t\r\n")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(secret.Close()).To(Succeed())
 		GinkgoT().Cleanup(func() { _ = os.Remove(secret.Name()) })

@@ -110,21 +110,23 @@ services:
 
 ### Prometheus Scrape Configuration
 
-The exporter exposes `/probe?target=&lt;device&gt;&amp;module=&lt;name&gt;`.
-Prometheus relabeling passes each device as the `target`. The Grafana
-dashboards key on a `name` label, which you set per device in
-`static_configs` (Prometheus attaches it to every scraped metric):
+Add each device to Prometheus. `name` is optional; the exporter uses the target
+address when it is missing. Set `module` for devices that need credentials.
 
 ```yaml
 scrape_configs:
   - job_name: shelly
     metrics_path: /probe
-    params:
-      module: [default] # omit if your devices have no password
     static_configs:
-      - targets: ["192.168.1.100", "192.168.1.101"]
-      - targets: ["192.168.1.102"]
-        labels: { module: auth, name: Laundry Plug } # targets needing credentials
+      - targets:
+          - "192.168.1.100"
+        labels:
+          name: "Kitchen Plug"
+      - targets:
+          - "192.168.1.102"
+        labels:
+          module: auth
+          name: "Laundry Plug"
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

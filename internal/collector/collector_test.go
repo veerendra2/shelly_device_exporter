@@ -45,7 +45,7 @@ var _ = Describe("Collector", func() {
 			System:  &shelly.SystemStatus{MAC: "0011", Uptime: 100, RAMSize: 1, RAMFree: 2, FSSize: 3, FSFree: 4},
 			Switch0: &shelly.SwitchStatus{APower: new(10.5), AEnergy: &shelly.SwitchEnergy{Total: 5000}},
 		}
-		exporter := collector.New(status, &price, "EUR")
+		exporter := collector.New(status, "plug-1", &price, "EUR")
 
 		families := gather(exporter)
 		Expect(families).To(HaveKey("shelly_device_apower_watts"))
@@ -55,12 +55,13 @@ var _ = Describe("Collector", func() {
 		Expect(families).To(HaveKey("shelly_device_uptime_seconds_total"))
 
 		cost := families["shelly_device_aenergy_cost_total"].Metric[0]
-		Expect(labelValue(cost, "name")).To(Equal(""))
+		Expect(labelValue(cost, "name")).To(Equal("plug-1"))
 		Expect(labelValue(cost, "currency")).To(Equal("EUR"))
 		// 5000 Wh / 1000 * 0.32 = 1.6
 		Expect(cost.GetCounter().GetValue()).To(Equal(1.6))
 
 		power := families["shelly_device_apower_watts"].Metric[0]
 		Expect(power.GetGauge().GetValue()).To(Equal(10.5))
+		Expect(labelValue(power, "name")).To(Equal("plug-1"))
 	})
 })

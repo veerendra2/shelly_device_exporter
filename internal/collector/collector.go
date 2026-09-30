@@ -7,12 +7,13 @@ import (
 
 type Exporter struct {
 	status      *shelly.StatusResponse
+	name        string
 	pricePerKWh *float64
 	currency    string
 }
 
-func New(status *shelly.StatusResponse, pricePerKWh *float64, currency string) *Exporter {
-	return &Exporter{status: status, pricePerKWh: pricePerKWh, currency: currency}
+func New(status *shelly.StatusResponse, name string, pricePerKWh *float64, currency string) *Exporter {
+	return &Exporter{status: status, name: name, pricePerKWh: pricePerKWh, currency: currency}
 }
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
@@ -42,40 +43,40 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	if status.Switch0 != nil {
 		s := status.Switch0
 		if s.APower != nil {
-			ch <- prometheus.MustNewConstMetric(apower, prometheus.GaugeValue, *s.APower)
+			ch <- prometheus.MustNewConstMetric(apower, prometheus.GaugeValue, *s.APower, e.name)
 		}
 		if s.AEnergy != nil {
-			ch <- prometheus.MustNewConstMetric(aenergyTotal, prometheus.CounterValue, s.AEnergy.Total)
+			ch <- prometheus.MustNewConstMetric(aenergyTotal, prometheus.CounterValue, s.AEnergy.Total, e.name)
 			if e.pricePerKWh != nil && e.currency != "" {
 				cost := (s.AEnergy.Total / 1000) * (*e.pricePerKWh)
-				ch <- prometheus.MustNewConstMetric(energyCostTotal, prometheus.CounterValue, cost, e.currency)
+				ch <- prometheus.MustNewConstMetric(energyCostTotal, prometheus.CounterValue, cost, e.name, e.currency)
 			}
 		}
 		if s.Voltage != nil {
-			ch <- prometheus.MustNewConstMetric(voltage, prometheus.GaugeValue, *s.Voltage)
+			ch <- prometheus.MustNewConstMetric(voltage, prometheus.GaugeValue, *s.Voltage, e.name)
 		}
 		if s.Current != nil {
-			ch <- prometheus.MustNewConstMetric(current, prometheus.GaugeValue, *s.Current)
+			ch <- prometheus.MustNewConstMetric(current, prometheus.GaugeValue, *s.Current, e.name)
 		}
 		if s.PF != nil {
-			ch <- prometheus.MustNewConstMetric(pf, prometheus.GaugeValue, *s.PF)
+			ch <- prometheus.MustNewConstMetric(pf, prometheus.GaugeValue, *s.PF, e.name)
 		}
 		if s.Freq != nil {
-			ch <- prometheus.MustNewConstMetric(freq, prometheus.GaugeValue, *s.Freq)
+			ch <- prometheus.MustNewConstMetric(freq, prometheus.GaugeValue, *s.Freq, e.name)
 		}
 		if s.Temperature != nil && s.Temperature.Celsius != nil {
-			ch <- prometheus.MustNewConstMetric(temperatureCelsius, prometheus.GaugeValue, *s.Temperature.Celsius)
+			ch <- prometheus.MustNewConstMetric(temperatureCelsius, prometheus.GaugeValue, *s.Temperature.Celsius, e.name)
 		}
 	}
 
 	if status.System != nil {
-		ch <- prometheus.MustNewConstMetric(sysMAC, prometheus.GaugeValue, 1.0, status.System.MAC)
-		ch <- prometheus.MustNewConstMetric(restartRequired, prometheus.GaugeValue, boolToFloat64(status.System.RestartRequired))
-		ch <- prometheus.MustNewConstMetric(uptime, prometheus.CounterValue, status.System.Uptime)
-		ch <- prometheus.MustNewConstMetric(ramSize, prometheus.GaugeValue, status.System.RAMSize)
-		ch <- prometheus.MustNewConstMetric(ramFree, prometheus.GaugeValue, status.System.RAMFree)
-		ch <- prometheus.MustNewConstMetric(fsSize, prometheus.GaugeValue, status.System.FSSize)
-		ch <- prometheus.MustNewConstMetric(fsFree, prometheus.GaugeValue, status.System.FSFree)
+		ch <- prometheus.MustNewConstMetric(sysMAC, prometheus.GaugeValue, 1.0, status.System.MAC, e.name)
+		ch <- prometheus.MustNewConstMetric(restartRequired, prometheus.GaugeValue, boolToFloat64(status.System.RestartRequired), e.name)
+		ch <- prometheus.MustNewConstMetric(uptime, prometheus.CounterValue, status.System.Uptime, e.name)
+		ch <- prometheus.MustNewConstMetric(ramSize, prometheus.GaugeValue, status.System.RAMSize, e.name)
+		ch <- prometheus.MustNewConstMetric(ramFree, prometheus.GaugeValue, status.System.RAMFree, e.name)
+		ch <- prometheus.MustNewConstMetric(fsSize, prometheus.GaugeValue, status.System.FSSize, e.name)
+		ch <- prometheus.MustNewConstMetric(fsFree, prometheus.GaugeValue, status.System.FSFree, e.name)
 	}
 }
 

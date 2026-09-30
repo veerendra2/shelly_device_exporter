@@ -101,7 +101,7 @@ tasks:
   build-docker:
     desc: "Build Docker image"
     cmds:
-      - docker build -t {{.APP_NAME}} ./development
+      - docker build -t {{.APP_NAME}} .
 
   security:
     desc: "Run security vulnerability scan"
@@ -123,7 +123,6 @@ tasks:
     desc: "Run comprehensive checks: format, lint, security and test"
     cmds:
       - task fmt
-      - task fix
       - task lint
       - task vet
       - task security

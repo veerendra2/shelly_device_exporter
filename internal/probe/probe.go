@@ -25,16 +25,17 @@ var (
 	probeSuccess = prometheus.NewDesc(
 		"shelly_probe_success",
 		"Whether the probe to the Shelly device succeeded.",
-		nil, nil,
+		[]string{"name"}, nil,
 	)
 	probeDuration = prometheus.NewDesc(
 		"shelly_probe_duration_seconds",
 		"Duration of the probe request in seconds.",
-		nil, nil,
+		[]string{"name"}, nil,
 	)
 )
 
 type probeCollector struct {
+	name     string
 	success  bool
 	duration float64
 }
@@ -49,8 +50,8 @@ func (p *probeCollector) Collect(ch chan<- prometheus.Metric) {
 	if p.success {
 		success = 1.0
 	}
-	ch <- prometheus.MustNewConstMetric(probeSuccess, prometheus.GaugeValue, success)
-	ch <- prometheus.MustNewConstMetric(probeDuration, prometheus.GaugeValue, p.duration)
+	ch <- prometheus.MustNewConstMetric(probeSuccess, prometheus.GaugeValue, success, p.name)
+	ch <- prometheus.MustNewConstMetric(probeDuration, prometheus.GaugeValue, p.duration, p.name)
 }
 
 // Handler serves GET /probe?target=<device-address>&module=<name>.
@@ -92,9 +93,9 @@ func Handler(cfg *config.Config) http.Handler {
 
 		registry := prometheus.NewRegistry()
 		if status != nil {
-			registry.MustRegister(collector.New(status, cfg.PricePerKWh, cfg.Currency))
+			registry.MustRegister(collector.New(status, bare, cfg.PricePerKWh, cfg.Currency))
 		}
-		registry.MustRegister(&probeCollector{success: err == nil, duration: duration})
+		registry.MustRegister(&probeCollector{name: bare, success: err == nil, duration: duration})
 
 		promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})

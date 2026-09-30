@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/go-playground/validator/v10"
 	"go.yaml.in/yaml/v2"
@@ -86,7 +87,7 @@ func (c *Config) resolvePasswordFiles() error {
 		if err != nil {
 			return fmt.Errorf("module %q: reading password_file: %w", name, err)
 		}
-		mod.Password = strings.TrimRight(string(data), "\n\r")
+		mod.Password = strings.TrimRightFunc(string(data), unicode.IsSpace)
 		mod.PasswordFile = ""
 		c.Modules[name] = mod
 	}
