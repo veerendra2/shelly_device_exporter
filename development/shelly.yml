@@ -1,0 +1,8 @@
+---
+price_per_kwh: 0.3362
+currency: EUR
+modules:
+  default: {}
+  auth:
+    username: admin
+    password: '{{ env "SHELLY_PASSWORD" }}'

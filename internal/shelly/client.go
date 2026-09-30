@@ -10,37 +10,14 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/icholy/digest"
-	"github.com/veerendra2/shelly_device_exporter/internal/config"
 )
 
 const (
-	statusPath                     = "/rpc/Shelly.GetStatus"
-	maxConcurrentDeviceConnections = 4
+	statusPath           = "/rpc/Shelly.GetStatus"
+	maxResponseBodyBytes = 1 << 20
 )
-
-type Client struct {
-	devices     []config.Device
-	pricePerKWh *float64
-	currency    string
-	costEnabled bool
-}
-
-type DeviceStatus struct {
-	Name    string
-	Address string
-	Switch  *SwitchStatus
-	System  *SystemStatus
-	Cost    *EnergyCost
-	Err     error
-}
-
-type EnergyCost struct {
-	Value    float64
-	Currency string
-}
 
 // This exporter currently supports only the components below,
 // so the response is unmarshaled into these objects only.
@@ -49,33 +26,45 @@ type StatusResponse struct {
 	Switch0 *SwitchStatus `json:"switch:0"`
 }
 
-func doRequest(ctx context.Context, addr string, username string, password string) (*StatusResponse, error) {
-	var status StatusResponse
-	requestUrl, err := url.Parse(addr)
+// Client scrapes a single Shelly device. One client exists per probe request.
+type Client struct {
+	address  string
+	username string
+	password string
+}
+
+func New(address, username, password string) Client {
+	return Client{address: address, username: username, password: password}
+}
+
+// The timeout comes from the caller's context (the probe handler derives it
+// from the Prometheus scrape-timeout header), so the http.Client sets none.
+func (c *Client) get(ctx context.Context, rpcPath string) ([]byte, error) {
+	requestUrl, err := url.Parse(c.address)
 	if err != nil {
-		return &status, err
+		return nil, fmt.Errorf("invalid device address %q: %w", c.address, err)
 	}
-	requestUrl.Path = path.Join(requestUrl.Path, statusPath)
+	requestUrl.Path = path.Join(requestUrl.Path, rpcPath)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUrl.String(), nil)
 	if err != nil {
-		return &status, err
+		return nil, err
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	if password != "" {
+	client := &http.Client{}
+	if c.password != "" {
 		client.Transport = &digest.Transport{
-			Username:  username,
-			Password:  password,
+			Username:  c.username,
+			Password:  c.password,
 			Transport: http.DefaultTransport,
 			NoReuse:   true,
 		}
 	}
 
-	slog.Debug("Connecting to shelly device", "device_address", addr)
+	slog.Debug("Connecting to shelly device", "device_address", c.address)
 	resp, err := client.Do(req)
 	if err != nil {
-		return &status, err
+		return nil, fmt.Errorf("requesting %s: %w", c.address, err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -85,105 +74,31 @@ func doRequest(ctx context.Context, addr string, username string, password strin
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return &status, fmt.Errorf("shelly request failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("shelly request failed: %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodyBytes+1))
 	if err != nil {
-		return &status, fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	if len(body) > maxResponseBodyBytes {
+		return nil, fmt.Errorf("device response too large: over %d bytes", maxResponseBodyBytes)
 	}
 
 	slog.Debug("Raw Shelly API response", "device", requestUrl.Host, "json", string(body))
+	return body, nil
+}
 
+func (c *Client) Status(ctx context.Context) (*StatusResponse, error) {
+	body, err := c.get(ctx, statusPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var status StatusResponse
 	if err := json.Unmarshal(body, &status); err != nil {
-		return &status, err
+		return nil, fmt.Errorf("failed to parse device response: %w", err)
 	}
 
 	return &status, nil
-}
-
-func (c *Client) BulkStatus(ctx context.Context) []DeviceStatus {
-	numDevices := len(c.devices)
-	jobs := make(chan config.Device, numDevices)
-	results := make(chan DeviceStatus, numDevices)
-
-	// Determine the optimal number of workers
-	numWorkers := min(numDevices, maxConcurrentDeviceConnections)
-	slog.Debug("Spawning workers to connect shelly devices", "count", numWorkers)
-
-	// Start workers
-	for range numWorkers {
-		go func() {
-			for device := range jobs {
-				select {
-				case <-ctx.Done():
-					// Context cancelled, send error to prevent deadlock in the collector loop
-					results <- DeviceStatus{
-						Name:    device.Name,
-						Address: device.Address,
-						Err:     ctx.Err(),
-					}
-					continue
-				default:
-				}
-
-				status, err := doRequest(ctx, device.Address, device.Username, device.Password)
-				if err != nil {
-					results <- DeviceStatus{
-						Name:    device.Name,
-						Address: device.Address,
-						Err:     err,
-					}
-					continue
-				}
-
-				deviceStatus := DeviceStatus{
-					Name:    device.Name,
-					Address: device.Address,
-					Switch:  status.Switch0,
-					System:  status.System,
-				}
-
-				if c.costEnabled && status.Switch0 != nil && status.Switch0.AEnergy != nil {
-					deviceStatus.Cost = &EnergyCost{
-						Value:    (status.Switch0.AEnergy.Total / 1000) * (*c.pricePerKWh),
-						Currency: c.currency,
-					}
-				}
-
-				results <- deviceStatus
-			}
-		}()
-	}
-
-	// Feed jobs
-	for _, device := range c.devices {
-		jobs <- device
-	}
-	close(jobs)
-
-	// Collect and filter results
-	var finalStatuses []DeviceStatus
-	for range numDevices {
-		res := <-results
-		if res.Err != nil {
-			slog.Warn("Failed to get status from device",
-				"name", res.Name,
-				"address", res.Address,
-				"error", res.Err)
-			continue
-		}
-		finalStatuses = append(finalStatuses, res)
-	}
-
-	return finalStatuses
-}
-
-func New(cfg config.Config) (Client, error) {
-	return Client{
-		devices:     cfg.Devices,
-		pricePerKWh: cfg.PricePerKWh,
-		currency:    cfg.Currency,
-		costEnabled: cfg.CostEnabled(),
-	}, nil
 }

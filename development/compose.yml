@@ -1,0 +1,61 @@
+---
+name: shelly-device-exporter
+
+services:
+  grafana1:
+    image: grafana/grafana:latest
+    container_name: grafana1
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../assets/shelly-device-exporter-prometheus.json:/var/lib/grafana/dashboards/shelly-device-exporter-prometheus.json
+      - ./dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    ports:
+      - "3001:3000"
+    networks:
+      - prometheus_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9091:9090"
+    networks:
+      - prometheus_network
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+
+  shelly-device-exporter:
+    build:
+      context: ..
+    volumes:
+      - ./shelly.yml:/config.yml
+    environment:
+      CONFIG_FILE: /config.yml
+      LOG_LEVEL: debug
+      SHELLY_PASSWORD: ${SHELLY_PASSWORD}
+    networks:
+      - prometheus_network
+    restart: unless-stopped
+    ports:
+      - 8081:8080
+    hostname: shellydeviceexporter
+
+networks:
+  prometheus_network:
+    name: prometheus_network
+
+volumes:
+  grafana_data:
+    name: grafana_data
+  prometheus_data:
+    name: prometheus_data

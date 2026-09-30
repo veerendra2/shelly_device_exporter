@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,13 +13,11 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/veerendra2/gopackages/slogger"
 	"github.com/veerendra2/gopackages/version"
-	"github.com/veerendra2/shelly_device_exporter/internal/collector"
 	"github.com/veerendra2/shelly_device_exporter/internal/config"
-	"github.com/veerendra2/shelly_device_exporter/internal/shelly"
+	"github.com/veerendra2/shelly_device_exporter/internal/probe"
 )
 
 const appName = "shelly_device_exporter"
@@ -57,36 +56,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	shellyClient, err := shelly.New(*cfg)
-	if err != nil {
-		slog.Error("Failed to create shelly client", "error", err)
-		os.Exit(1)
-	}
-
-	exporter, err := collector.New(shellyClient)
-	if err != nil {
-		slog.Error("Failed to create exporter", "error", err)
-		os.Exit(1)
-	}
-
-	prometheus.MustRegister(exporter)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if _, err = w.Write([]byte("<body>Metrics are available at <a href=\"/metrics\">/metrics</a></body>")); err != nil {
+		if _, err := w.Write([]byte("<body>Probing is available at /probe?target=&lt;device&gt;, metrics at <a href=\"/metrics\">/metrics</a></body>")); err != nil {
 			slog.Warn("Failed to write", "error", err)
 		}
 	})
+	http.Handle("/probe", probe.Handler(cfg))
 	http.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{
 		Addr:              cli.Address,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       30 * time.Second,
+		// Must exceed the probe's 30s scrape-timeout cap, or slow devices get
+		// their connection killed before shelly_probe_success can report 0.
+		WriteTimeout: 35 * time.Second,
+		IdleTimeout:  30 * time.Second,
+	}
+
+	// Bind up front so a busy port (or a bad address) exits instead of
+	// leaving the process running without a server.
+	listener, err := net.Listen("tcp", cli.Address)
+	if err != nil {
+		slog.Error("Failed to listen", "address", cli.Address, "error", err)
+		os.Exit(1)
 	}
 
 	go func() {
-		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Server died unexpected.", slog.Any("error", err))
 		}
 		slog.Error("Server stopped.")
@@ -104,7 +101,7 @@ func main() {
 	<-done
 	slog.Info("Shutdown started.")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {

@@ -189,7 +189,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "label_replace(shelly_device_sys_mac_info{job=\"$job\"}, \"mac\", \"$1\", \"mac\", \"(.*)\")",
+                        "expr": "max by (name, mac) (shelly_device_sys_mac_info{job=\"$job\"})",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -211,7 +211,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_restart_required{job=\"$job\"}",
+                        "expr": "max by (name) (shelly_device_restart_required{job=\"$job\"})",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -233,7 +233,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "1 - (shelly_device_ram_free{job=\"$job\"} / shelly_device_ram_size{job=\"$job\"})",
+                        "expr": "1 - (max by (name) (shelly_device_ram_free{job=\"$job\"}) / max by (name) (shelly_device_ram_size{job=\"$job\"}))",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -255,7 +255,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "1 - (shelly_device_fs_free{job=\"$job\"} / shelly_device_fs_size{job=\"$job\"})",
+                        "expr": "1 - (max by (name) (shelly_device_fs_free{job=\"$job\"}) / max by (name) (shelly_device_fs_size{job=\"$job\"}))",
                         "format": "table",
                         "instant": true,
                         "range": false
@@ -277,13 +277,35 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "shelly_device_uptime_seconds_total{job=\"$job\"}",
+                        "expr": "max by (name) (shelly_device_uptime_seconds_total{job=\"$job\"})",
                         "format": "table",
                         "instant": true,
                         "range": false
                       }
                     },
                     "refId": "E",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max by (name) (shelly_probe_success{job=~\"$job\"})",
+                        "format": "table",
+                        "instant": true,
+                        "range": false
+                      }
+                    },
+                    "refId": "F",
                     "hidden": false
                   }
                 }
@@ -309,6 +331,7 @@
                         "Time 2": true,
                         "Time 3": true,
                         "Time 4": true,
+                        "Time 5": true,
                         "Value": true,
                         "Value #A": true,
                         "__name__": true,
@@ -316,23 +339,27 @@
                         "__name__ 2": true,
                         "__name__ 3": true,
                         "__name__ 4": true,
+                        "__name__ 5": true,
                         "instance": true,
                         "instance 1": true,
                         "instance 2": true,
                         "instance 3": true,
                         "instance 4": true,
+                        "instance 5": true,
                         "job": true,
                         "job 1": true,
                         "job 2": true,
                         "job 3": true,
-                        "job 4": true
+                        "job 4": true,
+                        "job 5": true
                       },
                       "indexByName": {
-                        "Value #B": 2,
-                        "Value #C": 4,
-                        "Value #D": 5,
-                        "Value #E": 3,
-                        "mac": 1,
+                        "Value #B": 3,
+                        "Value #C": 5,
+                        "Value #D": 6,
+                        "Value #E": 4,
+                        "Value #F": 1,
+                        "mac": 2,
                         "name": 0
                       },
                       "renameByName": {
@@ -340,6 +367,7 @@
                         "Value #C": "RAM Usage",
                         "Value #D": "FS Usage",
                         "Value #E": "Uptime",
+                        "Value #F": "Status",
                         "mac": "MAC Address",
                         "name": "Name"
                       }
@@ -385,6 +413,40 @@
                   }
                 },
                 "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Status"
+                    },
+                    "properties": [
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "0": {
+                                "color": "red",
+                                "index": 0,
+                                "text": "DOWN"
+                              },
+                              "1": {
+                                "color": "green",
+                                "index": 1,
+                                "text": "UP"
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      }
+                    ]
+                  },
                   {
                     "matcher": {
                       "id": "byName",
@@ -461,11 +523,11 @@
                       },
                       {
                         "id": "max",
-                        "value": 100
+                        "value": 1
                       },
                       {
                         "id": "unit",
-                        "value": "percent"
+                        "value": "percentunit"
                       },
                       {
                         "id": "thresholds",
@@ -478,7 +540,7 @@
                             },
                             {
                               "color": "red",
-                              "value": 80
+                              "value": 0.8
                             }
                           ]
                         }
@@ -508,7 +570,7 @@
         "spec": {
           "id": 11,
           "title": "Grand Total Cost",
-          "description": "Grand total cost of all shell devices in selected time window",
+          "description": "Grand total cost of all Shelly devices in the selected time range",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -526,10 +588,10 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "sum(increase(shelly_device_aenergy_cost_total{job=\"$job\"}[$__range]))",
+                        "expr": "sum by (currency) (increase(shelly_device_aenergy_cost_total{job=\"$job\"}[$__range]))",
                         "format": "table",
                         "instant": true,
-                        "legendFormat": "__auto",
+                        "legendFormat": "{{currency}}",
                         "range": false
                       }
                     },
@@ -566,7 +628,8 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "suffix: EUR",
+                  "unit": "none",
+                  "decimals": 2,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -592,7 +655,7 @@
         "spec": {
           "id": 12,
           "title": "Device Costs",
-          "description": "Energy cost total per device",
+          "description": "Energy cost per device in the selected time range",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -610,7 +673,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "sum by (name) (increase(shelly_device_aenergy_cost_total{job=\"$job\"}[$__range]))",
+                        "expr": "sum by (name, currency) (increase(shelly_device_aenergy_cost_total{job=\"$job\"}[$__range]))",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "{{name}}",
@@ -631,17 +694,18 @@
                       "excludeByName": {
                         "Time": true,
                         "__name__": true,
-                        "currency": true,
                         "instance": true,
                         "job": true
                       },
                       "indexByName": {
-                        "Value": 1,
-                        "name": 0
+                      "Value": 2,
+                      "currency": 1,
+                      "name": 0
                       },
                       "renameByName": {
-                        "Value": "Cost",
-                        "name": "Name"
+                      "Value": "Cost",
+                      "currency": "Currency",
+                      "name": "Name"
                       }
                     }
                   }
@@ -661,7 +725,7 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "currencyEUR",
+                  "unit": "none",
                   "decimals": 4,
                   "thresholds": {
                     "mode": "absolute",
@@ -699,7 +763,7 @@
                       },
                       {
                         "id": "unit",
-                        "value": "suffix: EUR"
+                          "value": "none"
                       },
                       {
                         "id": "decimals",
@@ -1380,7 +1444,7 @@
                         "color": "green"
                       },
                       {
-                        "value": 80,
+                        "value": 0.8,
                         "color": "red"
                       }
                     ]
@@ -1823,14 +1887,14 @@
             },
             "spec": {
               "qryType": 1,
-              "query": "label_values(shelly_device_apower_watts,job)",
+              "query": "label_values(shelly_probe_success,job)",
               "refId": "VariableQueryEditor-VariableQuery"
             }
           },
           "regex": "",
           "regexApplyTo": "value",
           "sort": "alphabeticalAsc",
-          "definition": "label_values(shelly_device_apower_watts,job)",
+          "definition": "label_values(shelly_probe_success,job)",
           "options": [],
           "multi": false,
           "includeAll": false,
