@@ -17,7 +17,7 @@ docker compose up shelly-device-exporter -d --build
 To start full stack:
 
 ```bash
-docker compose -f up -d --build
+docker compose up -d --build
 ```
 
 Endpoints:
